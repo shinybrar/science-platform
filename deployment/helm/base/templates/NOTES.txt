@@ -30,23 +30,22 @@ Canadian Astronomy Data Centre
 
     - Verify the required skaha namespaces are created:
 
-        kubectl get namespaces
+      kubectl get namespaces
 
-        You should see the following namespaces:
+      You should see the following namespaces:
 
-        NAME            STATUS   AGE
-        {{ .Values.skaha.namespace }}   Active   1m
-        {{ .Values.skahaWorkload.namespace }} Active   1m
+      NAME            STATUS   AGE
+      {{ .Values.skaha.namespace }}   Active   1m
+      {{ .Values.skahaWorkload.namespace }} Active   1m
 
 {{- if .Values.traefik.install }}
 ### Developer Checklist
 
     - Developer Storage
        
-      Developer storage is a local storage class that is used for test purposes.  It is not
-      recommended for production use.  It is a `hostPath` volume that is mounted on the host machine.
-      Make sure the path exists on the host machine and is set in dev.overides.yaml file in the
-      `developer.storage.path` key.
+      Please make sure you have the following folders created on your local machine:
+
+      {{ .Values.developer.storage }}
 
     - Verify the Traefik Ingress Controller is running:
 
@@ -57,27 +56,4 @@ Canadian Astronomy Data Centre
         NAME                                    READY   STATUS    RESTARTS   AGE
         traefik-ingress-controller-<hash>       1/1     Running   0          1m
 
-### DNS on macOS
-
-While runnung Kubernetes on a MacOS, through Docker Desktop, the Docker VM
-cannot mount the NFS by default as it cannot do name resolution in the k8s cluster.
-It first needs to know about the `kube-dns` IP.  e.g.:
-
-```sh
-$ kubectl -n kube-system get service kube-dns
-NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE
-kube-dns   ClusterIP   10.96.0.10   <none>        53/UDP,53/TCP,9153/TCP   1d11h
-```
-
-The `ClusterIP` needs to be known to the Docker VM's name resolution.
-A simple way to do this is to mount the Docker VM root and modify it directly:
-
-```sh
-$ docker run --rm -it -v /:/vm-root alpine sh
-$ echo "nameserver 10.96.0.10" >> /vm-root/etc/resolv.conf
-$ cat /vm-root/etc/resolv.conf
-# DNS requests are forwarded to the host. DHCP DNS options are ignored.
-nameserver 192.168.65.7
-nameserver 10.96.0.10
-```
 {{- end }}
