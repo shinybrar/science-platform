@@ -1,0 +1,11 @@
+# Pre-Commit Configuration File: https://pre-commit.com
+---
+repos:
+  # Commitizen Configuration
+  # This configuration will add commitizen to your pre-commit hooks and will run it on commit-msg stage
+  # of the git commit process.
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.29.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
