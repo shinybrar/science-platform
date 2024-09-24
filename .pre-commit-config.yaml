@@ -28,9 +28,9 @@ repos:
       - id: check-toml
       # Attempts to load all yaml files to verify syntax.
       - id: check-yaml
-        # Exclude helm chart yaml files from the check-yaml hook.
+        # Exclude the deployment directory from yaml checks.
         # Helm Templating Language (HTL) is not valid yaml.
-        exclude: ^deployment/helm/.*\.yaml$
+        exclude: ^deployment/
       # Attempts to load all xml files to verify syntax.
       - id: check-xml
       # Check for debugger imports and py37+ breakpoint() calls in python source.
