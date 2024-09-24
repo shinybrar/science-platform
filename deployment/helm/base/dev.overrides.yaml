@@ -1,0 +1,53 @@
+# Developer Environment Overrides
+# This file is for local development environment overrides.  It is not used in the CI/CD pipeline``.
+
+secrets:
+  # -- The default-certificate secret for Traefik, must match traefik.tlsStore.default.defaultCertificate.secretName
+  default-certificate:
+    # -- **Dev Only:** Base64 encoded server certificate
+    tls.crt: null
+    # -- **Dev Only:** Base64 encoded server key
+    tls.key: null
+
+developer:
+  storage:
+    # -- **Dev Only:** The path to local storage for skaha-system, this path needs to exist on the host
+    skahaStoragePath: /mnt/skaha-storage
+    # -- **Dev Only:** The path to local storage for skaha-workload, this path needs to exist on the host
+    skahaWorkloadStoragePath: /mnt/skaha-workload-storage
+
+# Developer Environment Overrides for Traefik Ingress Controller
+traefik:
+  # -- **Dev Only:** Whether to install Traefik (default: false)
+  install: true
+  experimental:
+    plugins:
+      # -- **Dev Only:** Enable plugins for Traefik, e.g. traefik-forward-auth
+      enabled: true
+  logs:
+    general:
+      # -- **Dev Only:** The format of the logs, e.g. common or json
+      format: common
+      # -- **Dev Only:** Log level: DEBUG, PANIC, FATAL, ERROR, WARN, and INFO.
+      level: DEBUG
+    access:
+      # -- **Dev Only:** To enable access logs
+      enabled: true
+  tlsStore:
+    default:
+      defaultCertificate:
+        # -- **Dev Only:** Hardcoded secret name for the default certificate
+        secretName: default-certificate
+  # tlsOptions:
+  #   traefik-client-cert-option:
+  #     clientAuth:
+  #       clientAuthType: VerifyClientCertIfGiven
+  #       secretNames:
+  #         - cacert-secret
+  websecure:
+    middlewares:
+      - default-traefik-passtlsclientcert@kubernetescrd
+      - default-traefik-header-transform@kubernetescrd
+    tls:
+      options:
+        - default-traefik-client-cert-option@kubernetescrd
