@@ -71,7 +71,7 @@ REVISION: 1
 
 ### Persistent Volumes and Persistent Volume Claims
 
-**Note** 
+**Note**
 The `base` MUST be installed first as it creates the necessary Namespaces for the Persistent Volume Claims!
 
 **Important**
@@ -311,9 +311,9 @@ deployment:
 
     # Other data to be included in the main ConfigMap of this deployment.
     # Of note, files that end in .key are special and base64 decoded.
-    # 
+    #
     # extraConfigData:
-    
+
     # Resources provided to the Skaha service.
     # For units of storage, see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory.
     resources:
@@ -444,9 +444,9 @@ deployment:
 
     # Other data to be included in the main ConfigMap of this deployment.
     # Of note, files that end in .key are special and base64 decoded.
-    # 
+    #
     # extraConfigData:
-    
+
     # Resources provided to the Science Portal service.
     resources:
       requests:
@@ -507,16 +507,16 @@ deployment:
       # the rootOwner MUST be an object with the following properties set.
       rootOwner:
         # The adminUsername is required to be set whomever has admin access over the filesystem.dataDir above.
-        adminUsername: 
+        adminUsername:
 
         # The username of the root owner.
-        username: 
+        username:
 
         # The UID of the root owner.
-        uid: 
+        uid:
 
         # The GID of the root owner.
-        gid: 
+        gid:
 
     # Further UWS settings for the Tomcat Pool setup.
     uws:
@@ -555,7 +555,7 @@ deployment:
     # extraVolumeMounts:
     # - mountPath: "/config/cacerts"
     #   name: cacert-volume
-    # 
+    #
     # extraVolumeMounts:
 
     # Create the CA certificate volume to be mounted in extraVolumeMounts
@@ -570,9 +570,9 @@ deployment:
 
     # Other data to be included in the main ConfigMap of this deployment.
     # Of note, files that end in .key are special and base64 decoded.
-    # 
+    #
     # extraConfigData:
-    
+
     # Resources provided to the Cavern service.
     resources:
       requests:
@@ -675,9 +675,9 @@ deployment:
 
     # Other data to be included in the main ConfigMap of this deployment.
     # Of note, files that end in .key are special and base64 decoded.
-    # 
+    #
     # extraConfigData:
-    
+
     # Resources provided to the StorageUI service.
     resources:
       requests:
