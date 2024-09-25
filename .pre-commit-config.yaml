@@ -18,6 +18,7 @@ repos:
       - id: check-case-conflict
       # Checks that non-binary executables have a proper shebang.
       - id: check-executables-have-shebangs
+        exclude: deployment/k8s-config/*
       # Attempts to load all json files to verify syntax.
       - id: check-json
       # Check for files that contain merge conflict strings.
