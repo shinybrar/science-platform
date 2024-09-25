@@ -64,9 +64,8 @@ modify the `dev.overrides.yaml` file to include the volume configuration.
 
 ```yaml
 developer:
-  skaha-storage:
-    enabled: true
-    path: /path/that/exists/on/your/machine
+  storage:
+    path: /path/that/exists/on/host
 ```
 
 Alternatively, you can also find sample manifests in the `volumes` directory, to create a `PersistentVolume` and `PersistentVolumeClaim` 

@@ -4,7 +4,7 @@
 # This will be used by the User Sessions when starting up to gain access to the shared Storage with the Skaha service.
 # This default will create a hostPath volume with no declared PV.
 
-{{- if .Values.developer.storage.skahaStoragePath}}
+{{- if .Values.developer.storage.path}}
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -23,7 +23,7 @@ spec:
   persistentVolumeReclaimPolicy: Delete
   storageClassName: hostpath
   hostPath:
-    path: {{ .Values.developer.storage.skahaStoragePath }}
+    path: {{ .Values.developer.storage.path }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -43,9 +43,6 @@ spec:
   selector:
     matchLabels:
       storage: skaha-storage
-{{- end }}
-
-{{ if .Values.developer.storage.skahaWorkloadStoragePath }}
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -64,7 +61,7 @@ spec:
   persistentVolumeReclaimPolicy: Delete
   storageClassName: hostpath
   hostPath:
-    path: {{ .Values.developer.storage.skahaWorkloadStoragePath }}
+    path: {{ .Values.developer.storage.path }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
