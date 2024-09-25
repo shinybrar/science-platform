@@ -30,10 +30,8 @@ Kubernetes: `>=1.23`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| developer.skaha-storage.enabled | bool | `false` | **Dev Only:** Enable storage for local development |
-| developer.skaha-storage.path | string | `nil` | **Dev Only:** The path to the local storage, this path needs to exist on the host |
-| developer.skaha-workload-storage.enabled | bool | `false` | **Dev Only:** Enable storage for local development |
-| developer.skaha-workload-storage.path | string | `nil` | **Dev Only:** The path to the local storage, this path needs to exist on the host |
+| developer.storage.skahaStoragePath | string | `nil` | **Dev Only:** The path to local storage for skaha-system, this path needs to exist on the host. |
+| developer.storage.skahaWorkloadStoragePath | string | `nil` | **Dev Only:** The path to local storage for skaha-workload, this path needs to exist on the host |
 | kubernetesClusterDomain | string | `"cluster.local"` | DNS domain name used within the Kubernetes cluster to allow service communication, e.g. service.namespace.svc.cluster.local |
 | secrets.default-certificate | object | `{"tls.crt":null,"tls.key":null}` | **Dev Only:** The secret for Traefik Ingress SSL Termination, dont use in production!!! |
 | secrets.default-certificate."tls.crt" | string | `nil` | **Dev Only:** Base64 encoded server certificate |

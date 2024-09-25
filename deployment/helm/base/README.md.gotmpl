@@ -42,6 +42,12 @@ The Helm repository contains the current stable version as well.
 
 ## Developer Notes
 
+To install the base chart with the developer overrides, you can use the `dev.overrides.yaml` file.
+
+```bash
+helm install --dependency-update --values ./base/values.yaml --values ./dev.overrides.yaml base ./base
+```
+
 ### Proxy using Traefik
 
 The [Traefik](https://traefik.io/traefik/) proxy server is also installed as a dependency, which handles SSL termination.  
