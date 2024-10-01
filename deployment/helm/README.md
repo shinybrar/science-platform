@@ -128,11 +128,10 @@ helm install --values dev.override.yaml base base/
 
 >[!IMPORTANT]
 >There are two (2) Persistent Volume Claims that are used in the system, due to the fact that there are two (2) Namespaces (`skaha-system` and `skaha-workload`).  These PVCs, while having potentially different configurations, **SHOULD** point to the same storage.  For example, if two `hostPath` PVCs are created, the `hostPath.path` **MUST** point to the same folder in order to have shared content between the Services (`skaha`, `cavern`) and the User Sessions (Notebooks, CARTA, etc.).
+> It is expected that the deployer, or an Administrator, will create the necessary Persistent Volumes (if needed), and the required Persistent Volume Claims at this point.  There are sample [Local Storage](https://kubernetes.io/docs/concepts/storage/volumes/#local) Persistent Volume examples in the `base/volumes` folder.
 
->[!TIP]
->It is expected that the deployer, or an Administrator, will create the necessary Persistent Volumes (if needed), and the required Persistent Volume Claims at this point.  There are sample [Local Storage](https://kubernetes.io/docs/concepts/storage/volumes/#local) Persistent Volume examples in the `base/volumes` folder.
-
-> [!NOTE] In development environment, the `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
+>[!NOTE]
+>In development environment, the `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
 
 ## Required Persistent Volume Claim
 
