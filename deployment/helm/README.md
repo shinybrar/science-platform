@@ -73,7 +73,8 @@ The `--values` flag is used to specify the file to use for the overrides.
 
 The [Base](base) install will provisions `ServiceAccount`, `Role`, `Namespace`, and `Role Based Access` objects in the Kubernetes Cluster needed for the Skaha services.
 
->[!CAUTION] In a production environment, an ingress controller with proper SSL termination is required outside the scope of the `base` chart installation.
+>[!CAUTION]
+>In a production environment, an ingress controller with proper SSL termination is required outside the scope of the `base` chart installation.
 
 To install the `base` service, run the following command:
 
@@ -101,7 +102,8 @@ secrets:
       tls.key: <base64 encoded server key>
 ```
 
->[!TIP] To base64 encode a file and copy it to the clipboard, run the following command:
+>[!TIP]
+>To base64 encode a file and copy it to the clipboard, run the following command:
 >```bash
 > # On MacOS
 > base64 -i /path/to/tls.crt | pbcopy
@@ -111,7 +113,8 @@ secrets:
 
 - In development environments, the persistant volumes are provisioned using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
 
->[!CAUTION] The `developer.storage.path` should be created and have the necessary permissions before installing the `base` service in a development environment.
+>[!CAUTION]
+>The `developer.storage.path` should be created and have the necessary permissions before installing the `base` service in a development environment.
 
 ```bash
 cd science-platform/deployment/helm/base
@@ -120,21 +123,24 @@ helm install --values dev.override.yaml base base/
 
 ## Required Persistent Volumes
 
->[!NOTE] In production, `base` helm chart **MUST** be installed first as it creates the necessary namespaces(`skaha-system` and `skaha-workload`) required for the Persistent Volume Claims.
+>[!NOTE]
+>In production, `base` helm chart **MUST** be installed first as it creates the necessary namespaces(`skaha-system` and `skaha-workload`) required for the Persistent Volume Claims.
 
->[!IMPORTANT] There are two (2) Persistent Volume Claims that are used in the system, due to the fact that there are two (2) Namespaces (`skaha-system` and `skaha-workload`).  These PVCs, while
-> having potentially different configurations, **SHOULD** point to the same storage.  For example, if two `hostPath` PVCs are created, the `hostPath.path` **MUST** point to the same
-> folder in order to have shared content between the Services (`skaha`, `cavern`) and the User Sessions (Notebooks, CARTA, etc.).
+>[!IMPORTANT]
+>There are two (2) Persistent Volume Claims that are used in the system, due to the fact that there are two (2) Namespaces (`skaha-system` and `skaha-workload`).  These PVCs, while having potentially different configurations, **SHOULD** point to the same storage.  For example, if two `hostPath` PVCs are created, the `hostPath.path` **MUST** point to the same folder in order to have shared content between the Services (`skaha`, `cavern`) and the User Sessions (Notebooks, CARTA, etc.).
 
-> [!TIP] It is expected that the deployer, or an Administrator, will create the necessary Persistent Volumes (if needed), and the required Persistent Volume Claims at this point.  There are sample [Local Storage](https://kubernetes.io/docs/concepts/storage/volumes/#local) Persistent Volume examples in the `base/volumes` folder.
+>[!TIP]
+>It is expected that the deployer, or an Administrator, will create the necessary Persistent Volumes (if needed), and the required Persistent Volume Claims at this point.  There are sample [Local Storage](https://kubernetes.io/docs/concepts/storage/volumes/#local) Persistent Volume examples in the `base/volumes` folder.
 
 > [!NOTE] In development environment, the `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
 
 ## Required Persistent Volume Claim
 
->[!NOTE] In production, it is expected that there is a Persistent Volume Claim with the name of the Skaha Workload namespace hyphenated with `cavern-pvc`.  This will provide the backing storage to the User Sessions.  Using the default values, this means, `skaha-workload-cavern-pvc` will exist as a Persistent Volume Claim in the `skaha-workload` namespace.
+>[!NOTE]
+>In production, it is expected that there is a Persistent Volume Claim with the name of the Skaha Workload namespace hyphenated with `cavern-pvc`.  This will provide the backing storage to the User Sessions.  Using the default values, this means, `skaha-workload-cavern-pvc` will exist as a Persistent Volume Claim in the `skaha-workload` namespace.
 
-> [!NOTE] In development environment, the `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
+>[!NOTE]
+>In development environment, the `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
 
 ## POSIX Mapper install
 
