@@ -73,7 +73,7 @@ The `--values` flag is used to specify the file to use for the overrides.
 
 The [Base](base) install will provisions `ServiceAccount`, `Role`, `Namespace`, and `Role Based Access` objects in the Kubernetes Cluster needed for the Skaha services.
 
-> [!CAUTION] In a production environment, an ingress controller with proper SSL termination is required outside the scope of the `base` chart installation.
+>[!CAUTION] In a production environment, an ingress controller with proper SSL termination is required outside the scope of the `base` chart installation.
 
 To install the `base` service, run the following command:
 
@@ -91,33 +91,27 @@ In a development environment, the `base` installation needs to be augmented to a
 
 The `dev.override.yaml` file is a YAML file that contains the necessary overrides for the `base` service  to achieve the above requirements.
 
-<details>
-
-<summary>Detailed Developer Notes</summary>
-
 - `traefik`is enabled via the `traefike.install=true` flag.
 - To enabled `tls` for the `traefik` Ingress Controller, we need to provide a `default-certificate` in the `secrets` section with base64 encoded server certificate and key.
 
-  ```yaml
-  secrets:
-    default-certificate:
-        tls.crt: <base64 encoded server certificate>
-        tls.key: <base64 encoded server key>
-  ```
+```yaml
+secrets:
+  default-certificate:
+      tls.crt: <base64 encoded server certificate>
+      tls.key: <base64 encoded server key>
+```
 
-  > [!TIP] To base64 encode a file and copy it to the clipboard, run the following command:
-  >```bash
-  > # On MacOS
-  > base64 -i /path/to/tls.crt | pbcopy
-  > # On Linux
-  > base64 -i /path/to/tls.crt | xclip -selection clipboard
-  >```
+>[!TIP] To base64 encode a file and copy it to the clipboard, run the following command:
+>```bash
+> # On MacOS
+> base64 -i /path/to/tls.crt | pbcopy
+> # On Linux
+> base64 -i /path/to/tls.crt | xclip -selection clipboard
+>```
 
 - In development environments, the persistant volumes are provisioned using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
 
-  >[!CAUTION] The `developer.storage.path` should be created and have the necessary permissions before installing the `base` service in a development environment.
-
-</details>
+>[!CAUTION] The `developer.storage.path` should be created and have the necessary permissions before installing the `base` service in a development environment.
 
 ```bash
 cd science-platform/deployment/helm/base
