@@ -7,14 +7,17 @@ on:
   pull_request:
     branches:
       - main
-
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   commit-check:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Conventional Commitlint
       uses: opensource-nepal/commitlint@v1.3.0
   
