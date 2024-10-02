@@ -14,14 +14,15 @@ Canadian Astronomy Data Centre
   - Helm Chart Version  : {{ .Chart.Version }}
   - Application Version : {{ .Chart.AppVersion }}
 
-### Followup Linkes
+### Followup Links
 
     - [CANFAR Science Platform]()
     - [CANFAR Helm Charts]()
     - [Social Chat]()
     - [Issue Tracker]()
 
-### Post Installation Checklist
+{{- if not .Values.traefik.install }}
+### Production Checklist
 
     - To learn more about the release, try:
       
@@ -37,23 +38,37 @@ Canadian Astronomy Data Centre
       NAME            STATUS   AGE
       {{ .Values.skaha.namespace }}   Active   1m
       {{ .Values.skahaWorkload.namespace }} Active   1m
+{{ end }}
 
 {{- if .Values.traefik.install }}
 ### Developer Checklist
 
-    - Developer Storage
-       
-      Please make sure you have the following folders created on your local machine:
+    - Developer Storage: Please make sure you have the following folders exist on your local machine: {{ .Values.developer.storage.path }}
 
-      {{ .Values.developer.storage }}
+    - Verify the Dev Traefik Ingress Controller is running:
 
-    - Verify the Traefik Ingress Controller is running:
+      kubectl get pods -n default
 
-        kubectl get pods -n default
+      You should see the following pods:
 
-        You should see the following pods:
+      NAME                                    READY   STATUS    RESTARTS   AGE
+      traefik-ingress-controller-<hash>       1/1     Running   0          1m
 
-        NAME                                    READY   STATUS    RESTARTS   AGE
-        traefik-ingress-controller-<hash>       1/1     Running   0          1m
+    - Verify various skaha resources are created:
+      
+        # Verify the skaha namespaces are created
+        kubectl get namespaces
+        
+        # Verify the default-certificate for skaha services is created
+        kubectl get secrets
+
+        # Verify the skaha persistent volume claims are created
+        kubectl get pvc -A
+
+    - Access traefik dashboard:
+
+      kubectl port-forward $(kubectl get pods --selector "app.kubernetes.io/name=traefik" --output=name) 9000:9000
+
+      Open your browser and navigate to http://localhost:9000
 
 {{- end }}
