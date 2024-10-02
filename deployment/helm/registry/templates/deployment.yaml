@@ -12,8 +12,9 @@ spec:
       run: {{ .Release.Name }}-deployment
   template:
     metadata:
-        labels:
-          run: {{ .Release.Name }}-deployment
+      creationTimestamp: null
+      labels:
+        run: {{ .Release.Name }}-deployment
     spec:
       containers:
         - name: {{ .Release.Name }}-container
@@ -27,8 +28,14 @@ spec:
               memory: "128Mi"
               cpu: "256m"
           ports:
-            - containerPort: 80
-              protocol: TCP
+          - containerPort: 80
+            protocol: TCP
           volumeMounts:
-            - name: {{ .Release.Name }}-configmap
-              mountPath: "/usr/share/nginx/html/reg"
+          - name: {{ .Release.Name }}-volume
+            mountPath: /usr/share/nginx/html/reg
+            
+      volumes:
+      - name: {{ .Release.Name }}-volume
+        configMap:
+          name: {{ .Release.Name }}-configmap
+          

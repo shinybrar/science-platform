@@ -10,6 +10,7 @@
     - [Development Environment](#development-environment)
   - [Required Persistent Volumes](#required-persistent-volumes)
   - [Required Persistent Volume Claim](#required-persistent-volume-claim)
+  - [IVOA Registry](#ivoa-registry)
   - [POSIX Mapper install](#posix-mapper-install)
     - [Skaha install](#skaha-install)
     - [Science Portal User Interface install](#science-portal-user-interface-install)
@@ -140,6 +141,21 @@ helm install --values dev.override.yaml base base/
 
 >[!NOTE]
 >In development environment, the `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
+
+## IVOA Registry
+
+The IVOA Registry is used to find the services that are required for the Skaha service to function.
+
+>[!IMPORTANT]
+>In a production environment, it is expected that the IVOA Registry is hosted and availaible through an external source that can be found by the Skaha service.
+
+>[!CAUTION]
+> For development environments only, the `registry` helm chart can be used to deploy a local IVOA Registry.
+
+```bash
+cd science-platform/deployment/helm/registry
+helm install registry .
+```
 
 ## POSIX Mapper install
 
