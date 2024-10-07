@@ -10,7 +10,7 @@ name: base
 version: 0.3.3
 
 # A SemVer range of compatible Kubernetes versions for this chart. (optional)
-kubeVersion: ">=1.23"
+kubeVersion: ">=1.26"
 
 # A single-sentence description of this project (optional)
 description: "A Helm chart to install base components of the CANFAR Science Platform"
