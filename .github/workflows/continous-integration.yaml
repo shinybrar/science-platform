@@ -30,14 +30,11 @@ jobs:
       uses: helm/kind-action@v1.10.0
     - name: Install Helm
       uses: Azure/setup-helm@v4.2.0
-      with:
-        version: v3.8.0
     - name: Install Base Helm chart
       run: |
+        helm repo add traefik https://traefik.github.io/charts
+        helm repo update
         helm install base deployment/helm/base
     - name: Test Base Helm chart
       run: |
-        helm test base
-    - name: Uninstall Base Helm chart
-      run: |
-        helm uninstall base
+        helm test base --hide-notes
