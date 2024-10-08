@@ -1,12 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: test-namespaces
+  name: {{ include "base.fullname" . }}-test-namespaces
   annotations:
     "helm.sh/hook": test
 
 spec:
   template:
+    metadata:
+      namespace: {{ .Values.skaha.namespace }}
     spec:
       restartPolicy: Never
       containers:
