@@ -22,8 +22,10 @@
 
 ## Dependencies
 
-- A Kubernetes Cluster v1.23+
+- A Kubernetes Cluster v1.26+
 - [Helm v3.0+](https://helm.sh/docs/intro/install/)
+- OpenID Connect (OIDC) Provider for Authentication, (e.g. Indigo IAM, Keycloak, etc.)
+- GMS Service for Group Management
 
 > [!IMPORTANT]
 > Production deployments are also expected to have the following services and deployments in place:
@@ -161,7 +163,8 @@ helm install registry .
 
 The [POSIX Mapper Service](posix-mapper) is required to provide a UID to Username mapping, and a GID to Group Name mapping so that any Terminal access properly showed System Users in User Sessions.  It will generate UIDs when a user is requested, or a GID when a Group is requested, and then keep track of them.
 
-This service is required to be installed _before_ the Skaha service.
+>[!NOTE]
+>POSIX Mapper is required to be installed **before** the Skaha service.
 
 Create a `my-posix-mapper-local-values-file.yaml` file to override Values from the main [template `values.yaml` file](posix-mapper/values.yaml).
 
