@@ -39,9 +39,9 @@ kubectl -n cadc-openharbor create secret tls images-net-cert-secret --key privke
 
 kubectl -n cadc-openharbor create secret tls notary-net-cert-secret --key privkey.pem --cert fullchain.pem
 ```
- 
 
-If the secrets already exist and you want to update them, you can delete them and the issue the above commands: 
+
+If the secrets already exist and you want to update them, you can delete them and the issue the above commands:
 ```
 kubectl -n cadc-openharbor delete secret images-net-cert-secret
 

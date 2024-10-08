@@ -87,9 +87,9 @@ import org.junit.Test;
  *
  */
 public class GetSessionsTests {
-    
+
     private static final Logger log = Logger.getLogger(GetSessionsTests.class);
-    
+
     static {
         Log4jInit.setLevel("org.opencadc.skaha", Level.DEBUG);
     }
@@ -106,7 +106,7 @@ public class GetSessionsTests {
 
     public GetSessionsTests() {
     }
-    
+
     @Test
     public void testListSessions() {
         try {
@@ -125,13 +125,13 @@ public class GetSessionsTests {
                 // All start times should be parsable.
                 Instant.parse(s.getStartTime());
             }
-            
+
         } catch (Throwable t) {
             log.error("Unexpected", t);
             Assert.fail("Unexpected: " + t.getMessage());
         }
     }
-    
+
     @Test
     public void testFilterType() {
         try {
@@ -146,7 +146,7 @@ public class GetSessionsTests {
             Assert.fail("Unexpected: " + t.getMessage());
         }
     }
-    
+
     @Test
     public void testFilterStatus() throws Exception {
         GetAction get = new TestGetAction();
@@ -156,7 +156,7 @@ public class GetSessionsTests {
             Assert.assertEquals(s.getId(), "Running", s.getStatus());
         }
     }
-    
+
     @Test
     public void testFilterTypeStatus() {
         try {
@@ -172,7 +172,7 @@ public class GetSessionsTests {
             Assert.fail("Unexpected: " + t.getMessage());
         }
     }
-    
+
     static class TestGetAction extends GetAction {
 
         @Override

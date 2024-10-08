@@ -76,7 +76,7 @@ do
     if [[ "$i" == *"m" ]]; then
       i=$(tr -dc '0-9' <<< $i)
     elif [[ "$i" == *"none"* ]]; then
-      i=0 
+      i=0
     else
       i=$((i*1000))
     fi

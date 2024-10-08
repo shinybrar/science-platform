@@ -1,9 +1,9 @@
 
 .  ______    ___       ____    ______
   / ____/   /   |     / __ \  / ____/
- / /       / /| |    / / / / / /     
-/ /___    / ___ |   / /_/ / / /___   
-\____/   /_/  |_|  /_____/  \____/                                
+ / /       / /| |    / / / / / /
+/ /___    / ___ |   / /_/ / / /___
+\____/   /_/  |_|  /_____/  \____/
 Canadian Astronomy Data Centre
 
 ### Installation Info
@@ -17,9 +17,9 @@ Canadian Astronomy Data Centre
 ## Developer Checklist
 
     - Verify that the IVOA Registry is running,
-      
+
       kubectl get pods -n {{ .Release.Namespace }}
-    
+
     - Verify that the IVOA Registry is accessible,
 
         curl -X GET -v http://{{ .Values.deployment.hostname }}/reg/capabilities

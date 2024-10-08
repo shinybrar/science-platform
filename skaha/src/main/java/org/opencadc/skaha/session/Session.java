@@ -74,14 +74,14 @@ import java.util.Arrays;
 
 /**
  * @author majorb
- * 
+ *
  * Represents a session running in skaha.
  *
  */
 public class Session {
-    
+
     private static final Logger log = Logger.getLogger(Session.class);
-    
+
     public static final String STATUS_TERMINATING = "Terminating";
     public static final String STATUS_SUCCEEDED = "Succeeded";
     public static final String STATUS_RUNNING = "Running";
@@ -131,15 +131,15 @@ public class Session {
             this.supplementalGroups = new Integer[0];
         }
     }
-    
+
     public String getId() {
         return id;
     }
-    
+
     public String getUserid() {
         return userid;
     }
-    
+
     public String getImage() {
         return image;
     }
@@ -163,11 +163,11 @@ public class Session {
     public String getConnectURL() {
         return connectURL;
     }
-    
+
     public String getRequestedRAM() {
         return requestedRAM;
     }
-    
+
     public void setRequestedRAM(String ram) {
         this.requestedRAM = ram;
     }
@@ -227,7 +227,7 @@ public class Session {
     public void setExpiryTime(String timeInSeconds) {
         this.expiryTime = timeInSeconds;
     }
-    
+
     public String getAppId() {
         return appid;
     }
@@ -249,7 +249,7 @@ public class Session {
 
         return posixPrincipal;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof Session) {
@@ -258,12 +258,12 @@ public class Session {
         }
         return false;
     }
-    
+
     @Override
     public String toString() {
         return String.format(
             "Session[id=%s,userid=%s,image=%s,type=%s,status=%s,name=%s,startTime=%s,connectURL=%s]",
             id, userid, image, type, status, name, startTime, connectURL);
     }
-    
+
 }

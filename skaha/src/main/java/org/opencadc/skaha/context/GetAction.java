@@ -74,11 +74,11 @@ import org.opencadc.skaha.SkahaAction;
 
 /**
  * Output the resource context information.
- * 
+ *
  * @author majorb
  */
 public class GetAction extends SkahaAction {
-    
+
     public GetAction() {
         super();
     }
@@ -86,7 +86,7 @@ public class GetAction extends SkahaAction {
     @Override
     public void doAction() throws Exception {
         super.initRequest();
-        
+
         ResourceContexts rc = new ResourceContexts();
         Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
         String json = gson.toJson(rc);

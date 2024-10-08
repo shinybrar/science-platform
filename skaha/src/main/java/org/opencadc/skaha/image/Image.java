@@ -74,11 +74,11 @@ import java.util.Set;
  *
  */
 public class Image {
-    
+
     private String id;
     private Set<String> types;
     private String digest;
-    
+
     public Image(String id, Set<String> types, String digest) {
         if (id == null) {
             throw new IllegalArgumentException("id requried");
@@ -105,7 +105,7 @@ public class Image {
     public String getDigest() {
         return digest;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof Image) {
@@ -128,12 +128,12 @@ public class Image {
                    break;
                 }
             }
-            
+
             if (!found) {
                 return false;
             }
         }
-        
+
         return true;
     }
 }

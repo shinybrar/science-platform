@@ -16,7 +16,7 @@ do
 
 	#Generate a list of all users:
 	kubectl exec -it --namespace=skaha-system $pod -- bash -c 'ls /cephfs/cavern/home/ | tr " " "\n"' > all-users.txt
-	
+
 	#Generate a list of all active pod users, duplicated for each pod running:
 	kubectl -n skaha-workload get pods --no-headers -o custom-columns=":metadata.name" | cut -d "-" -f 3 > active-users.txt
 
@@ -60,7 +60,7 @@ do
 			do
 	      			u_m=$((u_m+i))
 			done
-	
+
 			#Find actual cores load:
 			cload=($(kubectl -n skaha-workload top pods --no-headers -l canfar-net-userid=$u | awk '{print $2}'))
         		for i in ${cload[@]}

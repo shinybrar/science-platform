@@ -27,7 +27,7 @@ spec:
       imagePullSecrets:
         - name: "${software.imagesecret}"
       securityContext:
-        runAsUser: ${skaha.posixid} 
+        runAsUser: ${skaha.posixid}
         runAsGroup: ${skaha.posixid}
         fsGroup: ${skaha.posixid}
         supplementalGroups: [${skaha.supgroups}]
@@ -116,7 +116,7 @@ spec:
           user: keel_prod
           secretRef:
             name: cephfs-cephx-user-key
-          readOnly: false          
+          readOnly: false
       - name: scratch-dir
         emptyDir: {}
       - name: sssd-dir

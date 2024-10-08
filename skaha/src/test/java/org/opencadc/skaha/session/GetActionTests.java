@@ -78,18 +78,18 @@ import org.junit.Test;
  *
  */
 public class GetActionTests {
-    
+
     private static final Logger log = Logger.getLogger(GetActionTests.class);
-    
+
     static {
         Log4jInit.setLevel("org.opencadc.skaha", Level.DEBUG);
     }
-    
+
     private static final long K_UNIT = 1024;
     private static final long M_UNIT = K_UNIT * K_UNIT;
     private static final long G_UNIT = K_UNIT * M_UNIT;
     private static final long T_UNIT = K_UNIT * G_UNIT;
-    
+
     private static final long NO_UNIT_VALUE = 100;
     private static final long K_VALUE = 2 * K_UNIT;
     private static final long M_VALUE = 3 * M_UNIT;
@@ -103,10 +103,10 @@ public class GetActionTests {
     private static final String G_VALUE_STR = String.valueOf(4) + "G";
     private static final String T_VALUE_STR = String.valueOf(5) + "T";
     private static final String INVALID_VALUE_STR = String.valueOf(5) + "A";
-    
+
     public GetActionTests() {
     }
-    
+
     @Test
     public void testNormalizeToLong() {
         try {
@@ -126,7 +126,7 @@ public class GetActionTests {
             Assert.fail("Unexpected: " + t.getMessage());
         }
     }
-    
+
     static class TestGetAction extends GetAction {
         @Override
         protected String getUsername() {

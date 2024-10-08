@@ -82,7 +82,7 @@ import org.opencadc.skaha.utils.CommandExecutioner;
  * @author majorb
  */
 public class DeleteAction extends SessionAction {
-    
+
     private static final Logger log = Logger.getLogger(DeleteAction.class);
 
     public DeleteAction() {
@@ -96,7 +96,7 @@ public class DeleteAction extends SessionAction {
             if (sessionID == null) {
                 throw new UnsupportedOperationException("Cannot kill all sessions.");
             } else {
-                
+
                 String k8sNamespace = K8SUtil.getWorkloadNamespace();
                 String[] getSessionCMD = new String[] {
                     "kubectl", "get", "--namespace", k8sNamespace, "pod",
@@ -105,7 +105,7 @@ public class DeleteAction extends SessionAction {
                     "-o", "custom-columns=" +
                         "TYPE:.metadata.labels.canfar-net-sessionType," +
                         "USERID:.metadata.labels.canfar-net-userid"};
-                        
+
                 String session = CommandExecutioner.execute(getSessionCMD);
                 if (StringUtil.hasText(session)) {
                     final String[] lines = session.split("\n");
@@ -126,7 +126,7 @@ public class DeleteAction extends SessionAction {
                         }
                     }
                 }
-                
+
                 // no session to delete
                 throw new ResourceNotFoundException(sessionID);
             }
@@ -136,12 +136,12 @@ public class DeleteAction extends SessionAction {
             deleteSession(posixPrincipal.username, TYPE_DESKTOP_APP, sessionID);
         }
     }
-    
+
     public void deleteSession(String userID, String type, String sessionID) throws Exception {
         // kill the session specified by sessionID
         log.debug("Stopping " + type + " session: " + sessionID);
         String k8sNamespace = K8SUtil.getWorkloadNamespace();
-        
+
         if (TYPE_DESKTOP_APP.equalsIgnoreCase(type)) {
             // deleting a desktop-app
             if (StringUtil.hasText(appID)) {
@@ -159,20 +159,20 @@ public class DeleteAction extends SessionAction {
             // deleting a session
             String jobName = K8SUtil.getJobName(sessionID, type, userID);
             delete(k8sNamespace, "job", jobName);
-            
+
             if (!SESSION_TYPE_HEADLESS.equals(type)) {
                 String ingressName = K8SUtil.getIngressName(sessionID, type);
                 delete(k8sNamespace, "ingressroute", ingressName);
-                
+
                 String serviceName = K8SUtil.getServiceName(sessionID, type);
                 delete(k8sNamespace, "service", serviceName);
-    
+
                 String middlewareName = K8SUtil.getMiddlewareName(sessionID, type);
                 delete(k8sNamespace, "middleware", middlewareName);
             }
         }
     }
-    
+
     private void delete(String k8sNamespace, String type, String name) throws InterruptedException, IOException {
         try {
             String[] cmd = new String[] {

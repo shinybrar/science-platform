@@ -139,7 +139,7 @@ public abstract class SkahaAction extends RestAction {
     protected String homedir;
     protected String scratchdir;
     protected String skahaTld;
-    protected boolean gpuEnabled; 
+    protected boolean gpuEnabled;
     public List<String> harborHosts = new ArrayList<>();
     protected String skahaUsersGroup;
     protected String skahaHeadlessGroup;
@@ -149,7 +149,7 @@ public abstract class SkahaAction extends RestAction {
     protected int maxUserSessions;
     protected String skahaPosixCacheURL;
     protected final PosixMapperConfiguration posixMapperConfiguration;
-   
+
 
 
     protected boolean skahaCallbackFlow = false;
@@ -161,7 +161,7 @@ public abstract class SkahaAction extends RestAction {
         homedir = System.getenv("skaha.homedir");
         skahaTld = System.getenv("SKAHA_TLD");
         gpuEnabled = Boolean.parseBoolean(System.getenv("GPU_ENABLED"));
-      
+
         scratchdir = System.getenv("skaha.scratchdir");
         String harborHostList = System.getenv("skaha.harborhosts");
         if (harborHostList == null) {

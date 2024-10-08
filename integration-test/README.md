@@ -1,6 +1,6 @@
 # Skaha Api test
 
-### To clone the dependent components  
+### To clone the dependent components
 
 ```bash
 sh setup.sh

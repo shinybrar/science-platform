@@ -90,7 +90,7 @@ import org.opencadc.skaha.SkahaAction;
  *
  */
 public class GetAction extends SkahaAction {
-    
+
     private static final Logger log = Logger.getLogger(GetAction.class);
     private static final int MAX_PROJECT_NTHREADS = 20;
     private static final int MAX_REPO_NTHREADS = 40;
@@ -102,21 +102,21 @@ public class GetAction extends SkahaAction {
     @Override
     public void doAction() throws Exception {
         super.initRequest();
-        
+
         String type = syncInput.getParameter("type");
         if (type != null && !SESSION_TYPES.contains(type)) {
             throw new IllegalArgumentException("unknown type: " + type);
         }
-        
+
         String idToken = super.getIdToken();
         List<Image> images = getImages(idToken, type);
         Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
         String json = gson.toJson(images);
-        
+
         syncOutput.setHeader("Content-Type", "application/json");
         syncOutput.getOutputStream().write(json.getBytes());
     }
-        
+
     protected List<Image> getImages(String idToken, String typeFilter) throws Exception {
         List<Callable<List<Image>>> tasks = new ArrayList<Callable<List<Image>>>();
         for (String harborHost : super.harborHosts) {
@@ -165,16 +165,16 @@ public class GetAction extends SkahaAction {
             }
         } catch (InterruptedException | ExecutionException e) {
             log.error("Error when executing thread in ThreadPool: " + e.getMessage() + " caused by: " + e.getCause().toString());
-            throw e; 
+            throw e;
         } finally {
             if (taskExecutor != null) {
                 taskExecutor.shutdown();
             }
         }
-        
+
         return images;
     }
-    
+
     protected List<Image> getProjectImages(String idToken, String harborHost, JSONObject jProject, String typeFilter) throws Exception {
         List<Callable<List<Image>>> tasks = new ArrayList<Callable<List<Image>>>();
         String pName = jProject.getString("name");
@@ -221,16 +221,16 @@ public class GetAction extends SkahaAction {
             }
         } catch (InterruptedException | ExecutionException e) {
             log.error("Error when executing thread in ThreadPool: " + e.getMessage() + " caused by: " + e.getCause().toString());
-            throw e; 
+            throw e;
         } finally {
             if (taskExecutor != null) {
                 taskExecutor.shutdown();
             }
         }
-        
+
         return images;
     }
-    
+
     protected List<Image> getRepoImages(String idToken, String harborHost, String pName, JSONObject jRepo, String typeFilter) throws Exception {
         List<Image> images = new ArrayList<Image>();
         String rName = jRepo.getString("name");

@@ -76,7 +76,7 @@ helm install --dependency-update --values ./base/values.yaml --values ./dev.over
 
 ### Proxy using Traefik
 
-The [Traefik](https://traefik.io/traefik/) proxy server is also installed as a dependency, which handles SSL termination. 
+The [Traefik](https://traefik.io/traefik/) proxy server is also installed as a dependency, which handles SSL termination.
 Helm options are under the `traefik` key in the `values.yaml` file.
 
 You can create your own secrets to contain your self-signed server certificates to be used by the SSL termination.

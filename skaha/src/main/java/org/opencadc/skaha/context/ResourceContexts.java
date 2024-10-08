@@ -80,22 +80,22 @@ import org.opencadc.skaha.SkahaAction;
  *
  */
 public class ResourceContexts {
-    
+
     private static final Logger log = Logger.getLogger(ResourceContexts.class);
-    
+
     private final Integer defaultRequestCores;
     private final Integer defaultLimitCores;
     private final Integer defaultCores;
     private final Integer defaultCoresHeadless;
     private final List<Integer> availableCores = new ArrayList<>();
-    
+
     // units in GB
     private final Integer defaultRequestRAM;
     private final Integer defaultLimitRAM;
     private final Integer defaultRAM;
     private final Integer defaultRAMHeadless;
     private final List<Integer> availableRAM = new ArrayList<>();
-    
+
     private final List<Integer> availableGPUs = new ArrayList<>();
 
     public ResourceContexts() {
@@ -113,7 +113,7 @@ public class ResourceContexts {
             String cOptions = mvp.getFirstPropertyValue("cores-options");
             String rOptions = mvp.getFirstPropertyValue("mem-gb-options");
             String gOptions = mvp.getFirstPropertyValue("gpus-options");
-            
+
             for (String c : cOptions.split(" ")) {
                 availableCores.add(Integer.valueOf(c));
             }
@@ -166,9 +166,9 @@ public class ResourceContexts {
     public List<Integer> getAvailableRAM() {
         return availableRAM;
     }
-    
+
     public List<Integer> getAvailableGPUs() {
         return availableGPUs;
     }
-    
+
 }

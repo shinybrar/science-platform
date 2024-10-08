@@ -10,9 +10,9 @@ deployment:
 
     # Root of shared storage
     skahaTld: "/cavern"
-    
+
     # When set to 'true' this flag will enable GPU node scheduling.
-    gpuEnabled: false 
+    gpuEnabled: false
 
     # The group name to verify users against for permission to use the Science Platform.
     usersGroup: "ivo://example.org/gms?example/users-group-name"
@@ -126,7 +126,7 @@ storage:
 kueue:
   resourceFlavors:
   - name: skaha
-    
+
   localQueues:
     skaha-workload-queue-interactive:
       namespace: skaha-workload
@@ -148,7 +148,7 @@ kueue:
             borrowingLimit: 2 # Change this according to the resource requirements
           - name: memory
             nominalQuota: 6Gi # Change this according to the available resources
-            borrowingLimit: 2Gi # Change this according to the available resources 
+            borrowingLimit: 2Gi # Change this according to the available resources
           - name: ephemeral-storage
             nominalQuota: 50Gi
     skaha-cluster-queue-headless:

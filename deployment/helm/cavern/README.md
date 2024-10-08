@@ -45,7 +45,7 @@ NAME                   STATUS   AGE
 skaha-system   cavern-tomcat-svc             ClusterIP      10.108.202.148   <none>        8080/TCP            1m
 ```
 
-The [IVOA VOSI availability](https://www.ivoa.net/documents/VOSI/20170524/REC-VOSI-1.1.html#tth_sEc5.5) endpoint can be used to 
+The [IVOA VOSI availability](https://www.ivoa.net/documents/VOSI/20170524/REC-VOSI-1.1.html#tth_sEc5.5) endpoint can be used to
 check that the Skaha service has started properly.  It may take a few moments to start up.
 
 ```sh

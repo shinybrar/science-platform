@@ -9,7 +9,7 @@ do
   tot_m=0
   nodes=($(kubectl -n $namespace get nodes -o custom-columns=:metadata.name))
   for n in ${nodes[@]}
-  do 
+  do
     node_cores=($(kubectl -n $namespace describe node $n | grep cpu: | sed 's/[^0-9]*//g'))
     node_mem=($(kubectl -n $namespace describe node $n | grep memory: | sed 's/[^0-9]*//g'))
 

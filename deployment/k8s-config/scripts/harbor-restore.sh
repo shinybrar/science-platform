@@ -66,7 +66,7 @@ kubectl exec -it --namespace=cadc-harbor $REGISTRY_POD -- bash -c "ls -lt $RESTO
 kubectl cp restic_0121 cadc-harbor/$REDIS_POD:/tmp/.
 
 #Restore REDIS data from snapshot:
-kubectl exec -it --namespace=cadc-harbor $REDIS_POD -- bash -c "export AWS_ACCESS_KEY_ID=$KEY_ID ; export AWS_SECRET_ACCESS_KEY=$ACCESS_KEY ; export RESTIC_PASSWORD=$PASSWORD ; ./tmp/restic_0121 -r $RESTIC_REPO --verbose restore latest --target $RESTORE_DIR --path $REDIS_DIR --host $REDIS_POD" 
+kubectl exec -it --namespace=cadc-harbor $REDIS_POD -- bash -c "export AWS_ACCESS_KEY_ID=$KEY_ID ; export AWS_SECRET_ACCESS_KEY=$ACCESS_KEY ; export RESTIC_PASSWORD=$PASSWORD ; ./tmp/restic_0121 -r $RESTIC_REPO --verbose restore latest --target $RESTORE_DIR --path $REDIS_DIR --host $REDIS_POD"
 
 #List restored files
 kubectl exec -it --namespace=cadc-harbor $REDIS_POD -- bash -c "ls -lt $RESTORE_DIR"

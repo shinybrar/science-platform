@@ -28,7 +28,7 @@ ingress:
         - images.canfar.net
       secretName: canfar-net-cert-secret
 
-  notary: 
+  notary:
     hostname: notary.canfar.net
     annotations:
       kubernetes.io/ingress.class: traefik
@@ -44,7 +44,7 @@ ingress:
 
 #***************************************************
 notary:
-  server: 
+  server:
     image:
       registry: docker.io
       repository: bitnami/harbor-notary-server-archived

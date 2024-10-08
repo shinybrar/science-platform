@@ -101,24 +101,24 @@ public class K8SUtil {
         final String userJobID = userID.replaceAll("[^0-9a-zA-Z-]", "-");
         return ("skaha-" + type + "-" + userJobID + "-" + sessionID).toLowerCase();
     }
-    
+
     //skaha-notebook-svc-rdcc0219
     public static String getServiceName(String sessionID, String type) {
         return "skaha-" + type + "-svc-" + sessionID;
     }
-    
+
     public static String getIngressName(String sessionID, String type) {
         return "skaha-" + type + "-ingress-" + sessionID;
     }
-    
+
     public static String getMiddlewareName(String sessionID, String type) {
         return "skaha-" + type + "-middleware-" + sessionID;
     }
-    
+
     public static String getHomeDir() {
         return System.getenv("skaha.homedir");
     }
-    
+
     public static String getScratchDir() {
         return System.getenv("skaha.scratchdir");
     }

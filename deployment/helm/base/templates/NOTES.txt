@@ -1,9 +1,9 @@
 
 .  ______    ___       ____    ______
   / ____/   /   |     / __ \  / ____/
- / /       / /| |    / / / / / /     
-/ /___    / ___ |   / /_/ / / /___   
-\____/   /_/  |_|  /_____/  \____/                                
+ / /       / /| |    / / / / / /
+/ /___    / ___ |   / /_/ / / /___
+\____/   /_/  |_|  /_____/  \____/
 Canadian Astronomy Data Centre
 
 ### Installation Info
@@ -25,7 +25,7 @@ Canadian Astronomy Data Centre
 ### Production Checklist
 
     - To learn more about the release, try:
-      
+
       helm status {{ .Release.Name }}
       helm get all {{ .Release.Name }}
 
@@ -55,10 +55,10 @@ Canadian Astronomy Data Centre
       traefik-ingress-controller-<hash>       1/1     Running   0          1m
 
     - Verify various skaha resources are created:
-      
+
         # Verify the skaha namespaces are created
         kubectl get namespaces
-        
+
         # Verify the default-certificate for skaha services is created
         kubectl get secrets
 

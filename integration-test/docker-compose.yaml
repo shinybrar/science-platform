@@ -40,7 +40,7 @@ services:
   gms:
     container_name: gms
     build:
-      context: ./dependencies/group-membership-service 
+      context: ./dependencies/group-membership-service
       dockerfile: Dockerfile
     environment:
       - IAM_HOST=http://iam:8080/

@@ -33,9 +33,9 @@ spec:
           volumeMounts:
           - name: {{ .Release.Name }}-volume
             mountPath: /usr/share/nginx/html/reg
-            
+
       volumes:
       - name: {{ .Release.Name }}-volume
         configMap:
           name: {{ .Release.Name }}-configmap
-          
+

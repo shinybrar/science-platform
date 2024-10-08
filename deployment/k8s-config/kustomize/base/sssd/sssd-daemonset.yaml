@@ -40,7 +40,7 @@ spec:
           subPath: cadc_CA_2029.crt
           name: sssd-cert-config-vol
         - mountPath: /var/lib/sss/pipes
-          name: sssd-dir          
+          name: sssd-dir
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsUser: 0

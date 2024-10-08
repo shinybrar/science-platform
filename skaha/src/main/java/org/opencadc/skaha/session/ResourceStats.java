@@ -73,15 +73,15 @@ import org.apache.log4j.Logger;
  *
  */
 public class ResourceStats {
-    
+
     private static final Logger log = Logger.getLogger(ResourceStats.class);
-    
+
     private JobInstances instances;
     private Core cores;
     private Ram ram;
 
-    public ResourceStats(int desktopCount, int headlessCount, int totalCount, 
-            Double requestedCPUCores, String requestedRAM, Double coresAvailable, String ramAvailable, 
+    public ResourceStats(int desktopCount, int headlessCount, int totalCount,
+            Double requestedCPUCores, String requestedRAM, Double coresAvailable, String ramAvailable,
             Double mCores, String withRAM, String mRAM, Double withCores) {
         instances = new JobInstances(desktopCount, headlessCount, totalCount);
 
@@ -101,13 +101,13 @@ public class ResourceStats {
         ram.ramAvailable = ramAvailable;
         ram.requestedRAM = requestedRAM;
     }
-    
+
     class JobInstances {
         private int session;
         private int desktopApp;
         private int headless;
         private int total;
-        
+
         public JobInstances(int desktopCount, int headlessCount, int totalCount) {
             desktopApp = desktopCount;
             headless = headlessCount;
@@ -115,13 +115,13 @@ public class ResourceStats {
             session = totalCount - desktopCount - headlessCount;
         }
     }
-    
+
     class Core {
         Double requestedCPUCores = 0.0;
         Double cpuCoresAvailable = 0.0;
         MaxCoreResource maxCPUCores;
     }
-    
+
     class Ram {
         String requestedRAM = "0G";
         String ramAvailable = "0G";
@@ -135,7 +135,7 @@ public class ResourceStats {
 
     class MaxRamResource {
         public String ram = "0G";
-        
+
         public Double withCPUCores = 0.0;
     }
 }

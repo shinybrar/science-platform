@@ -86,16 +86,16 @@ import org.junit.Test;
  *
  */
 public class GetImagesTests {
-    
+
     private static final Logger log = Logger.getLogger(GetImagesTests.class);
-    
+
     static {
         Log4jInit.setLevel("org.opencadc.skaha", Level.DEBUG);
     }
-    
+
     private static final String PROJECT_LIST =
         "[  {" +
-          "\"project_id\": 7," + 
+          "\"project_id\": 7," +
           "\"owner_id\": 1," +
           "\"name\": \"skaha-carta\"," +
           "\"creation_time\": \"2020-12-07T19:21:29Z\"," +
@@ -124,9 +124,9 @@ public class GetImagesTests {
                 "\"update_time\": \"0001-01-01T00:00:00Z\"" +
             "}" +
         "} ]";
-    
-    private static final String REPO_LIST = 
-        "[{\"artifact_count\":2,\"creation_time\":\"2021-02-08T23:11:54.208Z\",\"id\":13,\"name\":\"petuan/new-earth-snap\"," + 
+
+    private static final String REPO_LIST =
+        "[{\"artifact_count\":2,\"creation_time\":\"2021-02-08T23:11:54.208Z\",\"id\":13,\"name\":\"petuan/new-earth-snap\"," +
         "\"project_id\":3,\"pull_count\":1,\"update_time\":\"2021-02-10T21:40:09.897Z\"},{\"artifact_count\":1,\"creation_time\"" +
         ":\"2021-02-08T20:40:35.686Z\",\"id\":12,\"name\":\"petuan/starnet-notebook\",\"project_id\":3,\"update_time\":" +
         "\"2021-02-08T20:40:35.686Z\"},{\"artifact_count\":1,\"creation_time\":\"2021-02-02T23:36:57.250Z\",\"id\":11,\"name\":" +
@@ -134,7 +134,7 @@ public class GetImagesTests {
         "\"creation_time\":\"2021-02-02T22:43:26.675Z\",\"id\":10,\"name\":\"petuan/jwstpipe\",\"project_id\":3,\"pull_count\":1," +
         "\"update_time\":\"2021-02-02T22:59:02.809Z\"},{\"artifact_count\":1,\"creation_time\":\"2020-10-23T22:55:28.696Z\",\"id\":4," +
         "\"name\":\"petuan/notebook-scipy\",\"project_id\":3,\"pull_count\":52,\"update_time\":\"2021-02-11T22:13:26.723Z\"}]";
-    
+
     private static final String ARTIFACT_LIST =
         "[{\"addition_links\":{\"build_history\":{\"absolute\":false,\"href\":\"/api/v2.0/projects/petuan/repositories/new-earth-snap/" +
         "artifacts/sha256:439cadced5731d0946018fa3e2371444309c7cb8b6fc762c8f96ef915fc49ae4/additions/build_history\"}," +
@@ -162,7 +162,7 @@ public class GetImagesTests {
 
     public GetImagesTests() {
     }
-    
+
     @Test
     public void testGetImages() {
         try {
@@ -178,13 +178,13 @@ public class GetImagesTests {
             Image test = new Image("test/petuan/new-earth-snap:0.1.1", types,
                 "sha256:439cadced5731d0946018fa3e2371444309c7cb8b6fc762c8f96ef915fc49ae4");
             Assert.assertTrue("exists", images.contains(test));
-            
+
         } catch (Throwable t) {
             log.error("Unexpected", t);
             Assert.fail("Unexpected: " + t.getMessage());
         }
     }
-    
+
     @Test
     public void testGetImage() {
         try {
@@ -195,11 +195,11 @@ public class GetImagesTests {
             log.error("Unexpected", t);
             Assert.fail("Unexpected: " + t.getMessage());
         }
-        
+
     }
-    
+
     static class TestGetAction extends GetAction {
-        
+
         @Override
         protected String callHarbor(String idToken, String harborHost, String project, String repo) throws Exception {
             if (project == null) {
@@ -208,12 +208,12 @@ public class GetImagesTests {
             } else if (repo == null) {
                 log.debug("repo ouutput: " + REPO_LIST);
                 return REPO_LIST;
-            } else {    
+            } else {
                 log.debug("artifact output: " + ARTIFACT_LIST);
                 return ARTIFACT_LIST;
             }
         }
-        
+
         @Override
         protected String getIdToken() {
             return "";

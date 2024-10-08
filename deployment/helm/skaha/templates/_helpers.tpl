@@ -131,7 +131,7 @@ The affinity for Jobs.
 Common security context settings for User Session Jobs
 */}}
 {{- define "skaha.job.securityContext" -}}
-        runAsUser: ${skaha.posixid} 
+        runAsUser: ${skaha.posixid}
         runAsGroup: ${skaha.posixid}
         fsGroup: ${skaha.posixid}
         supplementalGroups: [${skaha.supgroups}]

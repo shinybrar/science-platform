@@ -92,7 +92,7 @@ spec:
           user: kanfarnetes_dev
           secretRef:
             name: cephfs-cephx-user-key
-          readOnly: false          
+          readOnly: false
       - name: scratch-dir
         emptyDir: {}
       - name: sssd-dir

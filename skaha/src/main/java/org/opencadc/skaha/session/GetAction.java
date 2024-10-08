@@ -224,7 +224,7 @@ public class GetAction extends SessionAction {
             String maxRAMStr = formatter.format(Double.valueOf((double) (maxRAM) / (1024 * 1024 * 1024))) + "G";
             String requestedRAMStr = formatter.format(requestedRAM) + "G";
             String ramAvailableStr = formatter.format(Double.valueOf((double) (ramAvailable) / (1024 * 1024 * 1024))) + "G";
-            return new ResourceStats(desktopCount, headlessCount, totalCount, requestedCPUCores, requestedRAMStr, 
+            return new ResourceStats(desktopCount, headlessCount, totalCount, requestedCPUCores, requestedRAMStr,
                                      coresAvailable, ramAvailableStr, maxCores, withRAMStr, maxRAMStr, withCores);
         } catch (Exception e) {
             log.error(e);
@@ -258,7 +258,7 @@ public class GetAction extends SessionAction {
 
     private Map<String, Map<String, Double>> getNodeResources(String k8sNamespace) throws Exception {
         String getCPUCoresCmd = "kubectl -n " + k8sNamespace + " get pods --no-headers=true -o custom-columns=" +
-                                "NODENAME:.spec.nodeName,PODNAME:.metadata.name," + 
+                                "NODENAME:.spec.nodeName,PODNAME:.metadata.name," +
                                 "REQCPUCORES:.spec.containers[].resources.requests.cpu," +
                                 "REQRAM:.spec.containers[].resources.requests.memory " +
                                 "--field-selector status.phase=Running --sort-by=.spec.nodeName";
@@ -302,7 +302,7 @@ public class GetAction extends SessionAction {
         rMap.put(REQ_RAM_KEY, Double.valueOf(0L));
         return rMap;
     }
-    
+
     private Map<String, Double> getResourcesMap(Map<String, Double> resourcesMap, String[] resources) {
         if (!NONE.equalsIgnoreCase(resources[2])) {
             resourcesMap.put(REQ_CPU_CORES_KEY, resourcesMap.get(REQ_CPU_CORES_KEY) + Double.parseDouble(toCoreUnit(resources[2])));
@@ -313,10 +313,10 @@ public class GetAction extends SessionAction {
             resourcesMap.put(REQ_RAM_KEY, resourcesMap.get(REQ_RAM_KEY) + Double.valueOf((double) (normalizeToLong(toCommonUnit(resources[3]))) / (1024 * 1024 * 1024)));
             log.debug("Node: " + resources[0] + " " + REQ_RAM_KEY + ": "+ resourcesMap.get(REQ_RAM_KEY));
         }
-        
+
         return resourcesMap;
     }
-    
+
     private Map<String, String[]> getAvailableResources(String k8sNamespace) throws Exception {
         String getAvailableResourcesCmd = "kubectl -n " + k8sNamespace + " describe nodes ";
         String rawResources = CommandExecutioner.execute(getAvailableResourcesCmd.split(" "));
@@ -396,13 +396,13 @@ public class GetAction extends SessionAction {
 
         return nodeToResourcesMap;
     }
-    
+
     public String getSingleDesktopApp(String sessionID, String appID) throws Exception {
         Session session = this.getDesktopApp(sessionID, appID);
         Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
         return gson.toJson(session);
     }
-    
+
     public String getSingleSession(String sessionID) throws Exception {
         Session session = this.getSession(getUsername(), sessionID);
         Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();

@@ -50,10 +50,10 @@ helm install --dependency-update --values ./base/values.yaml --values ./dev.over
 
 ### Proxy using Traefik
 
-The [Traefik](https://traefik.io/traefik/) proxy server is also installed as a dependency, which handles SSL termination.  
+The [Traefik](https://traefik.io/traefik/) proxy server is also installed as a dependency, which handles SSL termination.
 Helm options are under the `traefik` key in the `values.yaml` file.
 
-You can create your own secrets to contain your self-signed server certificates to be used by the SSL termination. 
+You can create your own secrets to contain your self-signed server certificates to be used by the SSL termination.
 See the `dev.overrides.yaml` file for more, and don't forget to `base64` encode the values.
 
 ### Shared Storage
@@ -68,7 +68,7 @@ developer:
     path: /path/that/exists/on/host
 ```
 
-Alternatively, you can also find sample manifests in the `volumes` directory, to create a `PersistentVolume` and `PersistentVolumeClaim` 
+Alternatively, you can also find sample manifests in the `volumes` directory, to create a `PersistentVolume` and `PersistentVolumeClaim`
 for the shared storage manually, via a `kubectl apply -f` command.
 
 ### DNS on macOS

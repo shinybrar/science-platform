@@ -29,7 +29,7 @@
 
 > [!IMPORTANT]
 > Production deployments are also expected to have the following services and deployments in place:
-> 
+>
 > - A [Traefik Ingress Controller](https://traefik.io/traefik/) for the `base` service to build on with proper SSL termination.
 > - An externally accessible [IVOA Registry Service](https://github.com/opencadc/reg/tree/master/reg) that can be found by the Skaha service.
 > - Persistent Volumes and Persistent Volume Claims for the Skaha Workload and Skaha System Namespaces that are shared between the services and configured by the cluster administrator.
