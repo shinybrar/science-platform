@@ -34,6 +34,7 @@ jobs:
       run: |
         helm repo add traefik https://traefik.github.io/charts
         helm repo update
+        helm dependency build deployment/helm/base
         helm install base deployment/helm/base
     - name: Test Base Helm chart
       run: |
