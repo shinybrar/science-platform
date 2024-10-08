@@ -32,5 +32,3 @@ jobs:
     - name: Lint Helm Charts
       run: |
         helm lint deployment/helm/*
-
-

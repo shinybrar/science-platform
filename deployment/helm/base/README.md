@@ -61,7 +61,7 @@ helm install --dependency-update --values ./base/values.yaml base ./base
 The Helm repository contains the current stable version as well.
 
 ```bash
-> helm repo add canfar-skaha-system https://images.canfar.net/chartrepo/skaha-system
+> helm repo add canfar-skaha-system https://images.opencadc.org/chartrepo/platform
 > helm repo update
 > helm install --dependency-update --values canfar-skaha-system/base/values.yaml base canfar-skaha-system/base
 ```

@@ -38,4 +38,3 @@ spec:
       - name: {{ .Release.Name }}-volume
         configMap:
           name: {{ .Release.Name }}-configmap
-
