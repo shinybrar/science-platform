@@ -5,12 +5,12 @@ repos:
   # This configuration will add commitizen to your pre-commit hooks and will run it on commit-msg stage
   # of the git commit process.
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.29.0
+    rev: v3.29.1
     hooks:
       - id: commitizen
         stages: [commit-msg]
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       # Prevent giant files from being committed.
       - id: check-added-large-files
@@ -42,3 +42,10 @@ repos:
       - id: trailing-whitespace
       # Checks for private key files.
       - id: detect-private-key
+  - repo: https://github.com/norwoodj/helm-docs
+    rev:  "v1.14.2"
+    hooks:
+      - id: helm-docs
+        args:
+          # Make the tool search for charts only under the `charts` directory
+          - --chart-search-root=deployment/helm/base
