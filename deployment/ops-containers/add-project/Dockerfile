@@ -10,4 +10,3 @@ RUN dnf -y install attr
 COPY src/add-project /usr/bin
 
 CMD ["/usr/bin/add-project"]
-

@@ -11,4 +11,3 @@ kubectl -n $WORKSPACE get jobs | grep -Eiv "headless" | awk '{print $1}'ls > $JO
 while read J; do
   kubectl -n $WORKSPACE patch job $J --type='json' -p '[{"op":"add","path":"/spec/activeDeadlineSeconds", "value":'$DEADLINE'}]'
 done <$JOBFILE
-

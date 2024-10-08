@@ -48,7 +48,3 @@ kubectl exec -it --namespace=cadc-harbor $REDIS_POD -- bash -c "export AWS_ACCES
 
 kubectl cp restic_0121 cadc-harbor/$REGISTRY_POD:/tmp/.
 kubectl exec -it --namespace=cadc-harbor $REGISTRY_POD -- bash -c "export AWS_ACCESS_KEY_ID=$KEY_ID ; export AWS_SECRET_ACCESS_KEY=$ACCESS_KEY ; export RESTIC_PASSWORD=$PASSWORD ; ./tmp/restic_0121 -r $RESTIC_REPO --verbose backup $REGISTRY_DIR"
-
-
-
-

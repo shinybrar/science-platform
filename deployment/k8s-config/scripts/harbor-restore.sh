@@ -73,5 +73,3 @@ kubectl exec -it --namespace=cadc-harbor $REDIS_POD -- bash -c "ls -lt $RESTORE_
 
 #Copy restored data to active directory
 #kubectl exec -it --namespace=cadc-harbor $REDIS_POD -- bash -c "cp -R $RESTORE_DIR$REDIS_DIR REDIS_DIR"
-
-

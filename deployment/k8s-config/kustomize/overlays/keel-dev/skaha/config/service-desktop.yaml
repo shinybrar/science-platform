@@ -12,4 +12,3 @@ spec:
   selector:
     canfar-net-sessionID: ${skaha.sessionid}
     canfar-net-sessionType: desktop
-

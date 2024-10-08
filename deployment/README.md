@@ -32,4 +32,3 @@ Browser based application to interaface with authentication as well as the Caver
 | `/cavern` | `cavern` | [IVOA VOSpace](https://www.ivoa.net/documents/VOSpace/20180620/REC-VOSpace-2.1.html) endpoint for accessing the User Storage. |
 | `/science-portal` | `science-portal` | Browser user interface endpoint for session listing, creation, and deletion.  This is a Single Page Application (SPA) using React and Plain Javascript, with a Java backend. |
 | `/storage` | `storage-ui` | Browser application to manage Storage Items in the User Storage API (`/cavern`).  It provides Upload and Download, Folder creation, and Group setting. |
-

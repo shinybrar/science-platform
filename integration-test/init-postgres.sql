@@ -28,4 +28,3 @@ ALTER TABLE Users_groups ADD CONSTRAINT fk_usegro_on_user FOREIGN KEY (Users_uid
 
 create sequence users_uid_seq1 start with 100000;
 create sequence groups_gid_seq1 start with 1000000;
-

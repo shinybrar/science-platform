@@ -50,4 +50,3 @@ repos:
           # Make the tool search for charts only under the `charts` directory
           - --chart-search-root=deployment/helm/
           - --chart-to-generate=deployment/helm/posix-mapper,deployment/helm/base,deployment/helm/registry
-

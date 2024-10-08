@@ -11,4 +11,3 @@ spec:
     services:
     - name: arc-sshd-svc
       port: 64022
-

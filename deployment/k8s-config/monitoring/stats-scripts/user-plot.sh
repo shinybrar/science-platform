@@ -34,4 +34,3 @@ while read u; do
 	EOFMarker
 
 done < users.txt
-
