@@ -14,15 +14,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4.2.1
     - name: Setup pre-commit
       uses: pre-commit/action@v3.0.1
 
-  unit-tests:
+  helm-tests:
     needs: pre-commit
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Say hello
-      run: echo "Hello, world!"
+      uses: actions/checkout@v4.2.1
+    - name: Install kubectl
+      uses: Azure/setup-kubectl@v4.0.0
+    - name: Set up KinD Kubernetes cluster
+      uses: helm/kind-action@v1.10.0
+    - name: Install Helm
+      uses: Azure/setup-helm@v4.2.0
+      with:
+        version: v3.8.0
+    - name: Install Base Helm chart
+      run: |
+        helm install base deployment/helm/base
+    - name: Test Base Helm chart
+      run: |
+        helm test base
+    - name: Uninstall Base Helm chart
+      run: |
+        helm uninstall base
