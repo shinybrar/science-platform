@@ -1,35 +1,46 @@
-apiVersion: batch/v1
-kind: Job
+# Create a service account for testing
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  name: {{ include "base.fullname" . }}-test-namespaces
+  name: {{ .Values.skaha.namespace }}-tester
+  namespace: {{ .Values.skaha.namespace }}
   annotations:
     "helm.sh/hook": test
-
+    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-weight": "0"
+---
+# ClusterRoleBinding for the ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.skaha.namespace }}-tester-crb
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-weight": "1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.skaha.namespace }}-tester
+    namespace: {{ .Values.skaha.namespace }}
+---
+# Test pod to verify the namespace
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.skaha.namespace }}-namespace-test
+  namespace: {{ .Values.skaha.namespace }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-weight": "2"
 spec:
-  template:
-    metadata:
-      namespace: {{ .Values.skaha.namespace }}
-    spec:
-      restartPolicy: Never
-      containers:
-        - name: kubectl
-          image: bitnami/kubectl:latest # Use the latest version of kubectl
-          command:
-            - /bin/sh
-            - -c
-            - |
-              # Check that the Skaha system namespace exists
-              if kubectl get namespace {{ .Values.skaha.namespace }}; then
-                echo "Skaha system namespace exists"
-              else
-                echo "Skaha system namespace does not exist"
-                exit 1
-              fi
-
-              # Check that the Skaha Workload namespace exists
-              if kubectl get namespace {{ .Values.skahaWorkload.namespace }}; then
-                echo "Skaha Workload namespace exists"
-              else
-                echo "Skaha Workload namespace does not exist"
-                exit 1
-              fi
+  serviceAccountName: {{ .Values.skaha.namespace }}-tester
+  containers:
+    - name: {{ .Values.skaha.namespace }}-kubectl
+      image: bitnami/kubectl
+      command: ['sh', '-c', 'kubectl get ns {{ .Values.skaha.namespace }} || exit 1']
+  restartPolicy: Never
