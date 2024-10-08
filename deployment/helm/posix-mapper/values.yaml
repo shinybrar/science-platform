@@ -18,13 +18,13 @@ deployment:
     # -- The image pull policy for the service
     imagePullPolicy: Always
     # -- IVOA Resource ID for the service
-    resourceID: ivo://opencadc.org/posix-mapper
+    resourceID: ivo://example.org/posix-mapper
 
     # -- URI or URL of the OIDC (IAM) server.  Used to validate incoming tokens.
-    oidcURI: https://ska-iam.stfc.ac.uk/
+    oidcURI: iam.example.org
 
     # -- ID (URI) of the GMS Service.
-    gmsID: ivo://skao.int/gms
+    gmsID: ivo://example.org/gms
 
     # Optionally set the DEBUG port.
     # extraEnv:
@@ -51,12 +51,12 @@ deployment:
         # -- CPU Limit
         cpu: "500m"
 
-    # -- Minimum UID
+    # -- Minimum UID, **should be high so as not to conflict with Image UIDs**.
     minUID: 10000
-    # -- Minimum GID
+    # -- Minimum GID, **should be high so as not to conflict with Image GIDs**.
     minGID: 900000
     # -- Registry URL
-    registryURL: https://spsrc27.iaa.csic.es/reg
+    registryURL: https://example.org/reg
 
     # Optionally mount a custom CA certificate
     # extraVolumeMounts:
