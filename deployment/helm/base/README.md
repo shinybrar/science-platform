@@ -20,7 +20,7 @@ A Helm chart to install base components of the CANFAR Science Platform
 
 ## Requirements
 
-Kubernetes: `>=1.23`
+Kubernetes: `>=1.26`
 
 | Repository | Name | Version |
 |------------|------|---------|
@@ -30,8 +30,7 @@ Kubernetes: `>=1.23`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| developer.storage.skahaStoragePath | string | `nil` | **Dev Only:** The path to local storage for skaha-system, this path needs to exist on the host. |
-| developer.storage.skahaWorkloadStoragePath | string | `nil` | **Dev Only:** The path to local storage for skaha-workload, this path needs to exist on the host |
+| developer.storage.path | string | `nil` | **Dev Only:** The path to local storage for skaha, this path needs to exist on the host. |
 | kubernetesClusterDomain | string | `"cluster.local"` | DNS domain name used within the Kubernetes cluster to allow service communication, e.g. service.namespace.svc.cluster.local |
 | secrets.default-certificate | object | `{"tls.crt":null,"tls.key":null}` | **Dev Only:** The secret for Traefik Ingress SSL Termination, dont use in production!!! |
 | secrets.default-certificate."tls.crt" | string | `nil` | **Dev Only:** Base64 encoded server certificate |
@@ -69,6 +68,12 @@ The Helm repository contains the current stable version as well.
 
 ## Developer Notes
 
+To install the base chart with the developer overrides, you can use the `dev.overrides.yaml` file.
+
+```bash
+helm install --dependency-update --values ./base/values.yaml --values ./dev.overrides.yaml base ./base
+```
+
 ### Proxy using Traefik
 
 The [Traefik](https://traefik.io/traefik/) proxy server is also installed as a dependency, which handles SSL termination. 
@@ -85,9 +90,8 @@ modify the `dev.overrides.yaml` file to include the volume configuration.
 
 ```yaml
 developer:
-  skaha-storage:
-    enabled: true
-    path: /path/that/exists/on/your/machine
+  storage:
+    path: /path/that/exists/on/host
 ```
 
 Alternatively, you can also find sample manifests in the `volumes` directory, to create a `PersistentVolume` and `PersistentVolumeClaim`

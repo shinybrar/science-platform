@@ -9,14 +9,14 @@ A Helm chart to install the UID/GID POSIX Mapper
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | deployment.hostname | string | `"example.host.com"` | Hostname for the service, **Note:** Change this to your domain. |
-| deployment.posixMapper.gmsID | string | `"ivo://skao.int/gms"` | ID (URI) of the GMS Service. |
+| deployment.posixMapper.gmsID | string | `"ivo://example.org/gms"` | ID (URI) of the GMS Service. |
 | deployment.posixMapper.image | string | `"images.opencadc.org/platform/posix-mapper:0.2.1"` | The image for the service |
 | deployment.posixMapper.imagePullPolicy | string | `"Always"` | The image pull policy for the service |
-| deployment.posixMapper.minGID | int | `900000` | Minimum GID |
-| deployment.posixMapper.minUID | int | `10000` | Minimum UID |
-| deployment.posixMapper.oidcURI | string | `"https://ska-iam.stfc.ac.uk/"` | URI or URL of the OIDC (IAM) server.  Used to validate incoming tokens. |
-| deployment.posixMapper.registryURL | string | `"https://spsrc27.iaa.csic.es/reg"` | Registry URL |
-| deployment.posixMapper.resourceID | string | `"ivo://opencadc.org/posix-mapper"` | IVOA Resource ID for the service |
+| deployment.posixMapper.minGID | int | `900000` | Minimum GID, **should be high so as not to conflict with Image GIDs**. |
+| deployment.posixMapper.minUID | int | `10000` | Minimum UID, **should be high so as not to conflict with Image UIDs**. |
+| deployment.posixMapper.oidcURI | string | `"iam.example.org"` | URI or URL of the OIDC (IAM) server.  Used to validate incoming tokens. |
+| deployment.posixMapper.registryURL | string | `"https://example.org/reg"` | Registry URL |
+| deployment.posixMapper.resourceID | string | `"ivo://example.org/posix-mapper"` | IVOA Resource ID for the service |
 | deployment.posixMapper.resources | object | `{"limits":{"cpu":"500m","memory":"1Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}` | Resources provided to the Skaha service. |
 | deployment.posixMapper.resources.limits.cpu | string | `"500m"` | CPU Limit |
 | deployment.posixMapper.resources.limits.memory | string | `"1Gi"` | Memory Limit |
