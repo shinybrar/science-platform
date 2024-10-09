@@ -1,0 +1,6 @@
+
+
+deployment:
+  hostname: developer.example.org
+  cavern:
+    oidcURI: https://developer.example.org/iam

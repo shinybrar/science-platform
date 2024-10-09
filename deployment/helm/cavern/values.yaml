@@ -1,20 +1,25 @@
+#-- DNS domain name used within the Kubernetes cluster to allow service communication, e.g. service.namespace.svc.cluster.local
 kubernetesClusterDomain: cluster.local
 
-# Tell Kubernetes to spin up multiple instances.  Defaults to 1.
+#-- Number of replicas to run
 replicaCount: 1
 
-# It's best to keep these set as such, unless you're willing to change these in several places.
+
 skaha:
+  #-- The namespace for the Skaha system components, it recommended to leave this as is
   namespace: skaha-system
 
 # Skaha web service deployment
 deployment:
+  #-- The hostname for the service
   hostname: example.org
   cavern:
+    #-- The image to use for the service
     image: images.opencadc.org/platform/cavern:0.7.13
+    #-- The image pull policy
     imagePullPolicy: Always
 
-    # How cavern identifies itself.
+    #-- Self identifying resource ID for the service
     resourceID: "ivo://example.org/cavern"
 
     # Set the Registry URL pointing to the desired registry (https:// URL)
@@ -40,9 +45,9 @@ deployment:
     #
     # quotaPlugin: {NoQuotaPlugin | CephFSQuotaPlug}
 
-    # filesystem:
-      # persistent data directory in container
-      # dataDir: "/data"
+    filesystem:
+      #-- Persistent data directory in container
+      dataDir: "/data"
 
       # RELATIVE path to the node/file content that could be mounted in other containers
       # This will be used in a `dataDir`/`subPath` manner to remove shared data from the root folder.
@@ -50,11 +55,15 @@ deployment:
 
       # The adminUsername is required to be set whomever has admin access over the
       # filesystem.dataDir above.
-      # rootOwner:
-        # adminUsername: "root"
-        # username: "root"
-        # uid: 1000
-        # gid: 1000
+      rootOwner:
+        #-- The admin username for the filesystem.dataDir
+        adminUsername: "root"
+        #-- The username for the filesystem.dataDir
+        username: "root"
+        #-- The user id for the filesystem.dataDir
+        uid: 1000
+        #-- The group id for the filesystem.dataDir
+        gid: 1000
 
       # (optional) base directory exposed for sshfs mounts
       # sshfs:
