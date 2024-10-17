@@ -27,6 +27,9 @@
 - OpenID Connect (OIDC) Provider for Authentication, (e.g. Indigo IAM, Keycloak, etc.)
 - GMS Service for Group Management
 
+> [!WARNING]
+> For development purposes, we highly recommend to use the SKA IAM Prototype for the OIDC Provider and GMS Service. [To create an account, please register here](https://ska-iam.stfc.ac.uk/login).
+
 > [!IMPORTANT]
 > Production deployments are also expected to have the following services and deployments in place:
 >
@@ -61,15 +64,16 @@ cd science-platform/deployment/helm
 ### Quick Install
 
 ```bash
-helm install --values my-base-local-values-file.yaml base science-platform/base
-helm install -n skaha-system --values my-posix-mapper-local-values-file.yaml posixmapper science-platform/posixmapper
-helm install -n skaha-system --values my-skaha-local-values-file.yaml skaha science-platform/skaha
-helm install -n skaha-system --dependency-update --values my-scienceportal-local-values-file.yaml scienceportal science-platform/scienceportal
-helm install -n skaha-system --values my-cavern-local-values-file.yaml cavern science-platform/cavern
-helm install -n skaha-system --dependency-update --values my-storage-ui-local-values-file.yaml storage-ui science-platform-client/storageui
+helm install --values dev.overrides.yaml base science-platform/base
+helm install --values dev.overrides.yaml registry science-platform/registry
+helm install -n skaha-system --values dev.overrides.yaml posixmapper science-platform/posixmapper
+helm install -n skaha-system --values dev.overrides.yaml skaha science-platform/skaha
+helm install -n skaha-system --dependency-update --values dev.overrides.yaml scienceportal science-platform/scienceportal
+helm install -n skaha-system --values dev.overrides.yamlcavern science-platform/cavern
+helm install -n skaha-system --dependency-update --values dev.overrides.yaml storage-ui science-platform-client/storageui
 ```
 
-Here the `*-local-values-file.yaml` files are the environment specific overrides for the Helm Charts.  These files are used to override the default values in the Helm Charts.
+where, `dev.overrides.yaml` is the environment specific overrides for the Helm Charts.  These files are used to override the default values in the Helm Charts.
 The `--values` flag is used to specify the file to use for the overrides.
 
 ## Base Helm Chart
