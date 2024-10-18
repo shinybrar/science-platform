@@ -3,19 +3,21 @@
 - [Deployment Guide](#deployment-guide)
   - [Dependencies](#dependencies)
   - [Quick Start](#quick-start)
-    - [Helm Chart Repositories](#helm-chart-repositories)
+    - [Helm Repository](#helm-repository)
     - [Source Code Repository](#source-code-repository)
-    - [Quick Install](#quick-install)
+    - [Helm Install](#helm-install)
   - [Base Helm Chart](#base-helm-chart)
+    - [Production Environment](#production-environment)
     - [Development Environment](#development-environment)
-  - [Required Persistent Volumes](#required-persistent-volumes)
-  - [Required Persistent Volume Claim](#required-persistent-volume-claim)
+  - [Persistent Volumes](#persistent-volumes)
+    - [Production Environment](#production-environment-1)
+    - [Development Environment](#development-environment-1)
   - [IVOA Registry](#ivoa-registry)
   - [POSIX Mapper install](#posix-mapper-install)
-    - [Skaha install](#skaha-install)
+  - [Skaha Installation](#skaha-installation)
     - [Science Portal User Interface install](#science-portal-user-interface-install)
-    - [Cavern (User Storage API) install](#cavern-user-storage-api-install)
-    - [User Storage UI installation](#user-storage-ui-installation)
+  - [Cavern (User Storage API)](#cavern-user-storage-api)
+  - [User Storage UI](#user-storage-ui)
   - [Obtaining a Bearer Token](#obtaining-a-bearer-token)
   - [Flow](#flow)
   - [Structure](#structure)
@@ -42,7 +44,7 @@ See the service specific documentation for more information on how to deploy the
 
 ## Quick Start
 
-### Helm Chart Repositories
+### Helm Repository
 
 The official Helm Charts to deploy CANFAR Science Platform services are provided by the OpenCADC Helm Chart Repository.  To install the Helm Charts, run the following commands:
 
@@ -61,7 +63,9 @@ git clone https://github.com/opencadc/science-platform.git
 cd science-platform/deployment/helm
 ```
 
-### Quick Install
+### Helm Install
+
+Our goal is to install all the services in the following order:
 
 ```bash
 helm install --values dev.overrides.yaml base science-platform/base
@@ -78,12 +82,14 @@ The `--values` flag is used to specify the file to use for the overrides.
 
 ## Base Helm Chart
 
+### Production Environment
+
 The [Base](base) install will provisions `ServiceAccount`, `Role`, `Namespace`, and `Role Based Access` objects in the Kubernetes Cluster needed for the Skaha services.
 
 >[!CAUTION]
 >In a production environment, an ingress controller with proper SSL termination is required outside the scope of the `base` chart installation.
 
-To install the `base` service, run the following command:
+To install the `base` chart in production, run the following command:
 
 ```bash
 helm install base science-platform/base
@@ -93,9 +99,10 @@ helm install base science-platform/base
 
 In a development environment, the `base` installation needs to be augmented to additionally install and provision,
 
-- A `traefik` Ingress Controller
-- Persistent Volumes and Persistent Volume Claims for the Skaha Workload and Skaha System Namespaces
+- Install `traefik` Ingress Controller
+- Configure Persistent Volumes and Persistent Volume Claims for the Skaha Workload and Skaha System Namespaces
 - Setup a TLS certificate for the `traefik` Ingress Controller
+-
 
 The `dev.override.yaml` file is a YAML file that contains the necessary overrides for the `base` service  to achieve the above requirements.
 
@@ -118,35 +125,30 @@ secrets:
 > base64 -i /path/to/tls.crt | xclip -selection clipboard
 >```
 
-- In development environments, the persistant volumes are provisioned using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
-
->[!CAUTION]
->The `developer.storage.path` should be created and have the necessary permissions before installing the `base` service in a development environment.
-
 ```bash
 cd science-platform/deployment/helm/base
 helm install --values dev.override.yaml base base/
 ```
 
-## Required Persistent Volumes
+## Persistent Volumes
 
->[!NOTE]
->In production, `base` helm chart **MUST** be installed first as it creates the necessary namespaces(`skaha-system` and `skaha-workload`) required for the Persistent Volume Claims.
+Persistent Volumes are required for the Skaha services to function.  There are two (2) Persistent Volume Claims that are used in the system, due to the fact that there are two (2) Namespaces (`skaha-system` and `skaha-workload`).  These PVCs, while having potentially different configurations, **SHOULD** point to the same storage.  For example, if two `hostPath` PVCs are created, the `hostPath.path` **MUST** point to the same folder in order to have shared content between the Services (`skaha`, `cavern`) and the User Sessions (Notebooks, CARTA, etc.).
 
->[!IMPORTANT]
->There are two (2) Persistent Volume Claims that are used in the system, due to the fact that there are two (2) Namespaces (`skaha-system` and `skaha-workload`).  These PVCs, while having potentially different configurations, **SHOULD** point to the same storage.  For example, if two `hostPath` PVCs are created, the `hostPath.path` **MUST** point to the same folder in order to have shared content between the Services (`skaha`, `cavern`) and the User Sessions (Notebooks, CARTA, etc.).
-> It is expected that the deployer, or an Administrator, will create the necessary Persistent Volumes (if needed), and the required Persistent Volume Claims at this point.  There are sample [Local Storage](https://kubernetes.io/docs/concepts/storage/volumes/#local) Persistent Volume examples in the `base/volumes` folder.
+### Production Environment
 
->[!NOTE]
->In development environment, the `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
+In production, the Persistent Volumes and Persistent Volume Claims are expected to be created by the cluster administrator and are not managed by the `base` helm chart. There are sample [Local Storage](https://kubernetes.io/docs/concepts/storage/volumes/#local) Persistent Volume examples in the `base/volumes` folder.
 
-## Required Persistent Volume Claim
+The `base` helm chart **MUST** be installed first as it creates the necessary namespaces(`skaha-system` and `skaha-workload`) required for the Persistent Volume Claims.
 
 >[!NOTE]
 >In production, it is expected that there is a Persistent Volume Claim with the name of the Skaha Workload namespace hyphenated with `cavern-pvc`.  This will provide the backing storage to the User Sessions.  Using the default values, this means, `skaha-workload-cavern-pvc` will exist as a Persistent Volume Claim in the `skaha-workload` namespace.
 
->[!NOTE]
->In development environment, the `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
+### Development Environment
+
+In development environments, the persistant volumes are provisioned using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted. The `base` service will create the necessary Persistent Volume Claims using `hostPath` storage class. The `developer.storage.path` key is used to specify this path on the host machine where the volumes will be mounted.
+
+>[!CAUTION]
+>The `developer.storage.path` should be created and have the necessary permissions before installing the `base` service in a development environment.
 
 ## IVOA Registry
 
@@ -263,6 +265,7 @@ base:
 ```
 
 It is recommended to install into the `skaha-system` namespace, but not required.
+
 ```bash
 helm install -n skaha-system  --values my-posix-mapper-local-values-file.yaml posixmapper science-platform/posixmapper
 
@@ -274,6 +277,7 @@ REVISION: 1
 ```
 
 Test it.
+
 ```bash
 # See below for tokens
 export SKA_TOKEN=...
@@ -286,12 +290,11 @@ curl -SsL --header "authorization: Bearer ${SKA_TOKEN}" "https://example.host.co
 mynewuser:x:1000:1000:::
 ```
 
-### Skaha install
+## Skaha Installation
 
 The Skaha service will manage User Sessions.  It relies on the POSIX Mapper being deployed, and available to be found
-via the IVOA Registry:
+via the IVOA Registry: `/reg/resource-caps`
 
-`/reg/resource-caps`
 ```
 ...
 # Ensure the hostname matches the deployment hostname.
@@ -564,7 +567,7 @@ deployment:
     # ca.crt: <base64 encoded ca.crt blob>
 ```
 
-### Cavern (User Storage API) install
+## Cavern (User Storage API)
 
 The Cavern API provides access to the User Storage which is shared between Skaha and all of the User Sessions.  A [Bearer token](#obtaining-a-bearer-token) is required when trying to read
 private access, or any writing.
@@ -703,7 +706,7 @@ postgresql:
   install: true  # To run your own database, set this to false and override auth settings.
 ```
 
-### User Storage UI installation
+## User Storage UI
 
 Create a `my-storage-ui-local-values-file.yaml` file to override Values from the main [template `values.yaml` file](storage-ui/values.yaml).
 
