@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /deployment/ops-containers/add-project
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /image-cache
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /skaha
+    schedule:
+      interval: daily
