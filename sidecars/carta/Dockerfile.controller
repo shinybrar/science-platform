@@ -1,0 +1,10 @@
+FROM ubuntu:24.04
+
+# Add the CARTA PPA
+RUN apt-get update &&     apt-get install -y software-properties-common &&     add-apt-repository -y ppa:cartavis-team/carta &&     apt-get update
+
+# Install the backend package with all its dependencies
+RUN apt-get install -y carta-backend
+
+# Install additional required packages
+RUN apt-get install -y g++ make build-essential libpam0g-dev

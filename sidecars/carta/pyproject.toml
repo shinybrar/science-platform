@@ -1,0 +1,17 @@
+[project]
+name = "carta"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Shiny Brar", email = "shiny.brar@nrc-cnrc.gc.ca" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+carta = "carta:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
