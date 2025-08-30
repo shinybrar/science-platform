@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: carta-auth-sidecar
+  labels:
+    app: carta-auth-sidecar
+spec:
+  selector:
+    app: carta-auth-sidecar
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+

@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  carta-auth-sidecar:
+    build: .
+    image: carta-auth-sidecar:local
+    environment:
+      - TARGET_NAMESPACE=skaha-workload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${HOME}/.kube:/root/.kube:ro
+    restart: unless-stopped
+

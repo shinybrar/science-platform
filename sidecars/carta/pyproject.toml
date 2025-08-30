@@ -1,17 +1,20 @@
 [project]
-name = "carta"
+name = "carta-auth-sidecar"
 version = "0.1.0"
-description = "Add your description here"
+description = "ForwardAuth service for CARTA sessions resolving user IDs via Kubernetes labels"
+requires-python = ">=3.10"
 readme = "README.md"
-authors = [
-    { name = "Shiny Brar", email = "shiny.brar@nrc-cnrc.gc.ca" }
+authors = [{ name = "Science Platform" }]
+dependencies = [
+  "fastapi>=0.112",
+  "uvicorn[standard]>=0.30",
+  "cachetools>=5.3",
+  "kubernetes>=29.0",
 ]
-requires-python = ">=3.13"
-dependencies = []
+
+[tool.uv]
+dev-dependencies = []
 
 [project.scripts]
-carta = "carta:main"
+serve = "uvicorn:main"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
