@@ -1,4 +1,6 @@
-import os, re, json
+import os
+import re
+import json
 from typing import Optional
 
 from fastapi import FastAPI, Request, Response
@@ -42,7 +44,9 @@ def lookup_userid(session_id: str) -> Optional[str]:
         return cache[session_id]
     # 1) try Service labeled with the session
     label_sel = f"canfar-net-sessionID={session_id}"
-    svcs = core.list_namespaced_service(namespace=APP_NAMESPACE, label_selector=label_sel)
+    svcs = core.list_namespaced_service(
+        namespace=APP_NAMESPACE, label_selector=label_sel
+    )
     if svcs.items:
         labels = svcs.items[0].metadata.labels or {}
         uid = labels.get("canfar-net-userid")
@@ -60,7 +64,9 @@ def lookup_userid(session_id: str) -> Optional[str]:
     return None
 
 
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
+@app.api_route(
+    "/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+)
 async def auth_any(request: Request, path: str):
     # extract session id
     session_id = extract_session_id({k.lower(): v for k, v in request.headers.items()})
@@ -77,7 +83,9 @@ async def auth_any(request: Request, path: str):
     headers = {"carta-auth-token": userid}
     # tiny JSON for debugging (not required)
     body = json.dumps({"ok": True, "session": session_id, "userid": userid})
-    return Response(content=body, status_code=200, media_type="application/json", headers=headers)
+    return Response(
+        content=body, status_code=200, media_type="application/json", headers=headers
+    )
 
 
 @app.get("/livez")
@@ -92,4 +100,8 @@ async def readyz():
         core.get_api_resources()  # raises if connection/config invalid
         return {"status": "ready"}
     except Exception as exc:
-        return Response(content=json.dumps({"status": "not_ready", "error": str(exc)}), status_code=503, media_type="application/json")
+        return Response(
+            content=json.dumps({"status": "not_ready", "error": str(exc)}),
+            status_code=503,
+            media_type="application/json",
+        )
