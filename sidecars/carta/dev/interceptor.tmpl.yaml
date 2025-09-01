@@ -95,9 +95,6 @@ spec:
     - kind: Rule
       match: Host(`rc-workload-uv.canfar.net`) && PathPrefix(`/session/carta/${SESSION_ID}/api/database`)
       priority: 10000
-      middlewares:
-        # If your compression middleware name is namespace-scoped, this keeps it aligned by default.
-        - name: ${NAMESPACE}-enable-compression
       services:
         - kind: TraefikService
           name: carta-mirror
