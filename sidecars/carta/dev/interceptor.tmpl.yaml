@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carta-echo
+  namespace: ${NAMESPACE}
+  labels:
+    app: carta-echo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: carta-echo
+  template:
+    metadata:
+      labels:
+        app: carta-echo
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 99999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: echo
+          image: jmalloc/echo-server:0.3.5
+          env:
+            - name: PORT
+              value: "8080"
+            - name: LOG_HTTP_HEADERS
+              value: "true"
+            # - name: LOG_HTTP_BODY
+            #   value: "true"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "0.25"
+              memory: "250M"
+            limits:
+              cpu: "1"
+              memory: "1G"
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: carta-echo
+  namespace: ${NAMESPACE}
+  labels:
+    app: carta-echo
+spec:
+  selector:
+    app: carta-echo
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+
+---
+# Mirror Service: main -> CARTA service, mirror -> echo
+apiVersion: traefik.io/v1alpha1
+kind: TraefikService
+metadata:
+  name: carta-mirror
+  namespace: ${NAMESPACE}
+spec:
+  mirroring:
+    # Primary: the live CARTA service still gets 100% of traffic
+    name: skaha-carta-svc-${SESSION_ID}
+    port: 6901
+    # Mirror: send a copy of requests to the echo service
+    mirrors:
+      - name: carta-echo
+        port: 80
+        percent: 100   # mirror every request
+
+---
+# Narrow, higher-priority route only for /api/database/*
+# Uses the mirroring TraefikService above.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: skaha-carta-ingress-${SESSION_ID}-mirror
+  namespace: ${NAMESPACE}
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`rc-workload-uv.canfar.net`) && PathPrefix(`/session/carta/${SESSION_ID}/api/database`)
+      priority: 10000
+      middlewares:
+        # If your compression middleware name is namespace-scoped, this keeps it aligned by default.
+        - name: ${NAMESPACE}-enable-compression
+      services:
+        - kind: TraefikService
+          name: carta-mirror
+  tls:
+    secretName: rc-workload-uv-canfar-net-tls
