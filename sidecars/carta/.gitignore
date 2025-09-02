@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+wheels/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+.env
+.env.*
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test / Coverage
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Byte-compiled / logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# uv / lock
+uv.lock
+
