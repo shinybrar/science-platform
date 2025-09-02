@@ -13,4 +13,3 @@ def main() -> int:
         return subprocess.call(cmd)
     except KeyboardInterrupt:
         return 130
-

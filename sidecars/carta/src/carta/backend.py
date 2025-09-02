@@ -1,4 +1,8 @@
-import os, re, json
+import os
+import re
+import json
+import logging
+import structlog
 from typing import Optional
 
 from fastapi import FastAPI, Request, Response
@@ -19,6 +23,25 @@ except Exception:
     # fallback for local testing
     config.load_kube_config()
 core = client.CoreV1Api()
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+_level = getattr(logging, LOG_LEVEL, logging.INFO)
+
+# Configure stdlib logging so uvicorn/fastapi integrate with our level
+logging.basicConfig(level=_level)
+
+structlog.configure(
+    processors=[
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.add_log_level,
+        structlog.processors.EventRenamer("message"),
+        structlog.processors.JSONRenderer(),
+    ],
+    wrapper_class=structlog.make_filtering_bound_logger(_level),
+    context_class=dict,
+)
+
+logger = structlog.get_logger("carta.sidecar")
 
 app = FastAPI()
 
@@ -42,7 +65,9 @@ def lookup_userid(session_id: str) -> Optional[str]:
         return cache[session_id]
     # 1) try Service labeled with the session
     label_sel = f"canfar-net-sessionID={session_id}"
-    svcs = core.list_namespaced_service(namespace=APP_NAMESPACE, label_selector=label_sel)
+    svcs = core.list_namespaced_service(
+        namespace=APP_NAMESPACE, label_selector=label_sel
+    )
     if svcs.items:
         labels = svcs.items[0].metadata.labels or {}
         uid = labels.get("canfar-net-userid")
@@ -60,26 +85,6 @@ def lookup_userid(session_id: str) -> Optional[str]:
     return None
 
 
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
-async def auth_any(request: Request, path: str):
-    # extract session id
-    session_id = extract_session_id({k.lower(): v for k, v in request.headers.items()})
-    if not session_id:
-        # deny if we can't identify session
-        return Response(content="missing session id", status_code=403)
-
-    userid = lookup_userid(session_id)
-    if not userid:
-        return Response(content="userid not found", status_code=403)
-
-    # forwardAuth success: return 200 and include carta-auth-token
-    # Traefik will pass this header upstream if authResponseHeaders includes it.
-    headers = {"carta-auth-token": userid}
-    # tiny JSON for debugging (not required)
-    body = json.dumps({"ok": True, "session": session_id, "userid": userid})
-    return Response(content=body, status_code=200, media_type="application/json", headers=headers)
-
-
 @app.get("/livez")
 async def livez():
     return {"status": "ok"}
@@ -91,5 +96,77 @@ async def readyz():
         core.get_api_resources()
         return {"status": "ready"}
     except Exception as exc:
-        return Response(content=json.dumps({"status": "not_ready", "error": str(exc)}), status_code=503, media_type="application/json")
+        return Response(
+            content=json.dumps({"status": "not_ready", "error": str(exc)}),
+            status_code=503,
+            media_type="application/json",
+        )
 
+
+@app.api_route(
+    "/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+)
+async def auth_any(request: Request, path: str):
+    # extract session id
+    lowered = {k.lower(): v for k, v in request.headers.items()}
+    session_id = extract_session_id(lowered)
+    if not session_id:
+        # deny if we can't identify session
+        header_used = (
+            "referer"
+            if SESSION_RE.search(lowered.get("referer", ""))
+            else (
+                "x-forwarded-uri"
+                if SESSION_RE.search(lowered.get("x-forwarded-uri", ""))
+                else "<none>"
+            )
+        )
+        logger.debug(
+            "auth",
+            req=request.method,
+            path=request.url.path,
+            header_used=header_used,
+            session_id=None,
+            userid=None,
+            result="missing_session",
+        )
+        return Response(content="missing session id", status_code=403)
+
+    userid = lookup_userid(session_id)
+    if not userid:
+        header_used = (
+            "referer"
+            if SESSION_RE.search(lowered.get("referer", ""))
+            else "x-forwarded-uri"
+        )
+        logger.debug(
+            "auth",
+            req=request.method,
+            path=request.url.path,
+            header_used=header_used,
+            session_id=session_id,
+            userid=None,
+            result="userid_not_found",
+        )
+        return Response(content="userid not found", status_code=403)
+
+    # forwardAuth success: return 200 and include carta-auth-token
+    headers = {"carta-auth-token": userid}
+    body = json.dumps({"ok": True, "session": session_id, "userid": userid})
+    header_used = (
+        "referer"
+        if SESSION_RE.search(lowered.get("referer", ""))
+        else "x-forwarded-uri"
+    )
+    logger.debug(
+        "auth",
+        req=request.method,
+        path=request.url.path,
+        header_used=header_used,
+        session_id=session_id,
+        userid=userid,
+        result="ok",
+    )
+    return Response(
+        content=body, status_code=200, media_type="application/json", headers=headers
+    )
