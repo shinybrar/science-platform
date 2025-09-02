@@ -1,16 +1,15 @@
 [project]
-name = "carta-sidecar"
+name = "carta-auth-sidecar"
 version = "0.1.0"
-description = "ForwardAuth service for CARTA sessions to resolve CANFAR UserID"
+description = "ForwardAuth service for CARTA sessions resolving user IDs via Kubernetes labels"
 requires-python = ">=3.10"
 readme = "README.md"
-authors = [{ name = "CADC" }]
+authors = [{ name = "Science Platform" }]
 dependencies = [
   "fastapi>=0.112",
   "uvicorn[standard]>=0.30",
   "cachetools>=5.3",
   "kubernetes>=29.0",
-  "typer>=0.17.3",
 ]
 
 [tool.uv]
@@ -18,5 +17,8 @@ dev-dependencies = []
 package = true
 
 [project.scripts]
-serve = "uvicorn:main"
+carta-sidecar = "carta.cli:main"
+carta-intercept = "carta.dev.intercept:main"
 
+[tool.uv.sources]
+carta = { path = "src" }

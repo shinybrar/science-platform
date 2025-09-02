@@ -4,7 +4,7 @@ A small FastAPI service used as a ForwardAuth endpoint. It extracts a CARTA sess
 
 ## Requirements
 - Python 3.10+
-- `uv` (recommended) — ultra-fast Python package manager. Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- `uv` package manager. Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - Access to a Kubernetes cluster context, or run in-cluster.
 
 ## Configuration
@@ -13,20 +13,13 @@ A small FastAPI service used as a ForwardAuth endpoint. It extracts a CARTA sess
   - In-cluster: uses service account via `load_incluster_config()`.
   - Local: falls back to `~/.kube/config` via `load_kube_config()`.
 
-## Install deps with uv
-From this directory:
+## Install & Run (uv)
+Install dependencies and run via the CLI entrypoint. The `carta-sidecar` command forwards all provided arguments to `uvicorn` and defaults to the app target `carta.app:app` if none is supplied.
 
 ```
 uv sync
-```
-
-This resolves and installs the dependencies specified in `pyproject.toml` into a `.venv`.
-
-## Run locally
-Run with uv’s venv activated automatically:
-
-```
-uv run uvicorn app:app --host 0.0.0.0 --port 8000
+uv run carta-sidecar --host 0.0.0.0 --port 8000  # any uvicorn args work
+uv run carta-sidecar --reload --log-level debug  # dev flags
 ```
 
 Notes:
@@ -119,5 +112,9 @@ Notes:
 - Ensure RBAC is configured as described above so the service account can list services/pods in `TARGET_NAMESPACE`.
 
 ## Development
-- Format/typing tools are not enforced here; feel free to add `ruff`/`mypy` locally.
-- The service is intentionally lean: one file `app.py`, no DB, 10‑minute TTL cache.
+- Package layout (src layout):
+  - `src/carta/fastapi_app.py` — FastAPI app and routes
+  - `src/carta/app.py` — exposes `app` for uvicorn import target
+  - `src/carta/cli.py` — `carta-sidecar` CLI that forwards to uvicorn
+  - `src/carta/dev/intercept.py` — stub dev tool (`carta-intercept`)
+- Run with live reload: `uv run carta-sidecar --reload`
