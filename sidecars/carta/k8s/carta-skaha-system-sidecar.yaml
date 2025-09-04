@@ -39,6 +39,7 @@ spec:
       labels: { app: carta-sidecar }
     spec:
       serviceAccountName: skaha
+      automountServiceAccountToken: true
       securityContext:
         runAsNonRoot: true
         runAsUser: 99999
@@ -51,6 +52,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: REQUESTS_CA_BUNDLE
+              value: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+            - name: SSL_CERT_FILE
+              value: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
             # Optional overrides:
             # - name: TARGET_NAMESPACE
             #   value: "skaha-workload"
@@ -59,13 +64,13 @@ spec:
             - name: LOG_LEVEL
               value: "INFO"
           ports:
-            - containerPort: 8080
+            - containerPort: 8000
           livenessProbe:
-            httpGet: { path: /livez, port: 8080 }
+            httpGet: { path: /livez, port: 8000 }
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
-            httpGet: { path: /readyz, port: 8080 }
+            httpGet: { path: /readyz, port: 8000 }
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:
@@ -89,4 +94,3 @@ spec:
     - name: http
       port: 80
       targetPort: 8080
-
