@@ -1,0 +1,92 @@
+# rbac.yaml (no ServiceAccount; use existing SA "skaha")
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: carta-sidecar
+  namespace: skaha-system
+rules:
+  - apiGroups: [""]
+    resources: ["services", "pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: carta-sidecar
+  namespace: skaha-system
+subjects:
+  - kind: ServiceAccount
+    name: skaha
+    namespace: skaha-system
+roleRef:
+  kind: Role
+  name: carta-sidecar
+  apiGroup: rbac.authorization.k8s.io
+---
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carta-sidecar
+  namespace: skaha-system
+  labels: { app: carta-sidecar }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: carta-sidecar }
+  template:
+    metadata:
+      labels: { app: carta-sidecar }
+    spec:
+      serviceAccountName: skaha
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 99999
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: sidecar
+          image: images.canfar.net/skaha-system/carta-sidecar:dev
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # Optional overrides:
+            # - name: TARGET_NAMESPACE
+            #   value: "skaha-workload"
+            - name: CACHE_TTL_SECONDS
+              value: "3600"
+            - name: LOG_LEVEL
+              value: "INFO"
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet: { path: /livez, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "512Mi" }
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities: { drop: ["ALL"] }
+---
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: carta-sidecar
+  namespace: skaha-system
+  labels: { app: carta-sidecar }
+spec:
+  selector: { app: carta-sidecar }
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+
