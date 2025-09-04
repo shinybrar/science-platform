@@ -71,9 +71,7 @@ def intercept(
         "carta-echo", "--echo-deploy", help="Echo Deployment name (default: carta-echo)"
     ),
 ):
-    """
-    Apply the interceptor, stream echo logs, and clean up on Ctrl-C.
-    """
+    """Apply the interceptor, stream echo logs, and clean up on Ctrl-C."""
     # 1) read + render template
     raw = template_path.read_text(encoding="utf-8")
     rendered = Template(raw).substitute(NAMESPACE=namespace, SESSION_ID=session_id)

@@ -1,17 +1,16 @@
-import os
-import re
 import json
 import logging
-import structlog
+import os
+import re
 from typing import Optional
 
-from fastapi import FastAPI, Request, Response
+import structlog
 from cachetools import TTLCache
+from fastapi import FastAPI, Request, Response
 from kubernetes import client, config
 
-
 APP_NAMESPACE = os.environ.get("TARGET_NAMESPACE", "skaha-workload")
-SESSION_RE = re.compile(r"/session/carta/([a-z0-9]+)", re.I)
+SESSION_RE = re.compile(r"/session/carta/([a-z0-9]+)", re.IGNORECASE)
 
 # 600s TTL cache for session -> userid
 cache = TTLCache(maxsize=2048, ttl=600)
