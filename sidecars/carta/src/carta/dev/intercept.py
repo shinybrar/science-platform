@@ -1,16 +1,20 @@
 # intercept.py
 from __future__ import annotations
 
+import contextlib
 import signal
 import subprocess
 import sys
 import time
-from pathlib import Path
 from string import Template
+from typing import TYPE_CHECKING
 
 import typer
 
 from carta import TEMPLATE_PATH
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 app = typer.Typer(add_completion=False)
 
@@ -70,40 +74,28 @@ def intercept(
     echo_deploy: str = typer.Option(
         "carta-echo", "--echo-deploy", help="Echo Deployment name (default: carta-echo)"
     ),
-):
+) -> None:
     """Apply the interceptor, stream echo logs, and clean up on Ctrl-C."""
     # 1) read + render template
     raw = template_path.read_text(encoding="utf-8")
     rendered = Template(raw).substitute(NAMESPACE=namespace, SESSION_ID=session_id)
 
     # 2) kubectl apply
-    print(
-        f"→ Applying interceptor into ns={namespace}, session={session_id} ...",
-        flush=True,
-    )
     try:
         run(["kubectl", "apply", "-f", "-"], input_text=rendered, check=True)
     except subprocess.CalledProcessError:
-        print("✗ kubectl apply failed.", file=sys.stderr)
         raise typer.Exit(1)
 
     # 3) wait a bit
-    print(
-        f"→ Waiting {wait_seconds:.0f}s for resources to become ready ...", flush=True
-    )
     time.sleep(wait_seconds)
 
     # 4) stream logs from echo deployment
     dep_name = get_deploy_name(namespace, fallback=echo_deploy)
-    print(
-        f"→ Tailing logs from Deployment/{dep_name} in ns={namespace} (Ctrl-C to stop) ...",
-        flush=True,
-    )
 
     # prepare graceful teardown
     stop = False
 
-    def handle_sigint(sig, frame):
+    def handle_sigint(sig, frame) -> None:
         nonlocal stop
         stop = True
 
@@ -134,21 +126,15 @@ def intercept(
                 break
             time.sleep(0.2)
     finally:
-        print("\n→ Stopping log stream ...", flush=True)
-        try:
+        with contextlib.suppress(Exception):
             log_proc.terminate()
-        except Exception:
-            pass
 
         # 6) teardown manifests
-        print("→ Deleting interceptor resources ...", flush=True)
         try:
             run(["kubectl", "delete", "-f", "-"], input_text=rendered, check=False)
         except Exception:
             # best-effort cleanup
             pass
-
-        print("✓ Done.", flush=True)
 
 
 if __name__ == "__main__":

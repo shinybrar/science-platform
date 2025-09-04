@@ -1,171 +1,216 @@
+# app.py
+from __future__ import annotations
+
 import json
 import logging
 import os
 import re
-from typing import Optional
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from cachetools import TTLCache
 from fastapi import FastAPI, Request, Response
 from kubernetes import client, config
 
-APP_NAMESPACE = os.environ.get("TARGET_NAMESPACE", "skaha-workload")
-SESSION_RE = re.compile(r"/session/carta/([a-z0-9]+)", re.IGNORECASE)
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
-# 600s TTL cache for session -> userid
-cache = TTLCache(maxsize=2048, ttl=600)
-
-# In-cluster k8s client
-try:
-    config.load_incluster_config()
-except Exception:
-    # fallback for local testing
-    config.load_kube_config()
-core = client.CoreV1Api()
-
+NAMESPACE = (
+    os.environ.get("TARGET_NAMESPACE")
+    or os.environ.get("POD_NAMESPACE")
+    or "skaha-workload"
+)
+CACHE_TTL_SECONDS = int(os.environ.get("CACHE_TTL_SECONDS", "3600"))  # 1 hour default
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
-_level = getattr(logging, LOG_LEVEL, logging.INFO)
 
-# Configure stdlib logging so uvicorn/fastapi integrate with our level
-logging.basicConfig(level=_level)
+SESSION_RE = re.compile(r"/session/carta/([a-z0-9]+)", re.IGNORECASE)
+SESSION_LABEL_KEY = "canfar-net-sessionID"
+USER_LABEL_KEY = "canfar-net-userid"
 
+logging.basicConfig(level=LOG_LEVEL, format="%(message)s")
 structlog.configure(
     processors=[
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.add_log_level,
-        structlog.processors.EventRenamer("message"),
-        structlog.processors.JSONRenderer(),
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.StackInfoRenderer(),
+        structlog.dev.set_exc_info,
+        structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S", utc=False),
+        structlog.dev.ConsoleRenderer(),
     ],
-    wrapper_class=structlog.make_filtering_bound_logger(_level),
+    wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
     context_class=dict,
+    logger_factory=structlog.PrintLoggerFactory(),
+    cache_logger_on_first_use=False,
+)
+log = structlog.get_logger("carta-sidecar")
+
+try:
+    config.load_incluster_config()
+    log.info("K8S Mode", mode="incluster")
+except Exception:
+    config.load_kube_config()
+    log.info("K8S Mode", mode="kubeconfig")
+
+core = client.CoreV1Api()
+
+cache: TTLCache[str, str] = TTLCache(maxsize=4096, ttl=CACHE_TTL_SECONDS)
+
+app: FastAPI = FastAPI(title="CARTA ForwardAuth Injector", version="1.0.0")
+log.info(
+    "Backend Config",
+    namespace=NAMESPACE,
+    cache_ttl_seconds=CACHE_TTL_SECONDS,
+    log_level=LOG_LEVEL,
+    SESSION_LABEL_KEY=SESSION_LABEL_KEY,
+    USER_LABEL_KEY=USER_LABEL_KEY,
+    session_regex=SESSION_RE.pattern,
+    APP_PID=os.getpid(),
 )
 
-logger = structlog.get_logger("carta.sidecar")
 
-app = FastAPI()
+def extract(headers: Mapping[str, str]) -> str | None:
+    """Extract CARTA session ID from headers.
 
+    The session ID is parsed from either the `Referer` header URL path
+    or the `X-Forwarded-Uri` header using the configured regex pattern.
 
-def extract_session_id(headers) -> Optional[str]:
-    ref = headers.get("referer") or ""
-    m = SESSION_RE.search(ref)
-    if m:
-        return m.group(1)
-    # Fallback to X-Forwarded-Uri if Referer absent
+    Args:
+        headers: Mapping of lower-cased header names to values.
+
+    Returns:
+        The extracted session ID if found; otherwise ``None``.
+    """
+    # headers must be lower-cased keys
+    referer = headers.get("referer") or ""
+    match = SESSION_RE.search(referer)
+    if match:
+        return match.group(1)
+
     xfu = headers.get("x-forwarded-uri") or ""
-    m = SESSION_RE.search(xfu)
-    if m:
-        return m.group(1)
+    match = SESSION_RE.search(xfu)
+    if match:
+        return match.group(1)
+
     return None
 
 
-def lookup_userid(session_id: str) -> Optional[str]:
-    # cache hit?
+def lookup(session_id: str) -> str | None:
+    """Resolve a user ID for a given session ID.
+
+    This checks an in-memory TTL cache first, then queries Kubernetes
+    Services (primary) and Pods (fallback) in the configured namespace
+    for a matching session label, returning the associated user label.
+
+    Args:
+        session_id: The CARTA session identifier.
+
+    Returns:
+        The resolved user ID if found; otherwise ``None``.
+    """
     if session_id in cache:
+        log.debug("cache_hit", session=session_id)
         return cache[session_id]
-    # 1) try Service labeled with the session
-    label_sel = f"canfar-net-sessionID={session_id}"
-    svcs = core.list_namespaced_service(
-        namespace=APP_NAMESPACE, label_selector=label_sel
-    )
+
+    # 1) Services
+    label_sel = f"{SESSION_LABEL_KEY}={session_id}"
+    svcs = core.list_namespaced_service(namespace=NAMESPACE, label_selector=label_sel)
     if svcs.items:
         labels = svcs.items[0].metadata.labels or {}
-        uid = labels.get("canfar-net-userid")
+        uid = labels.get(USER_LABEL_KEY)
         if uid:
             cache[session_id] = uid
+            log.info(
+                "map_session_user",
+                source="service",
+                session=session_id,
+                userid=uid,
+                namespace=NAMESPACE,
+            )
             return uid
-    # 2) fallback: look at Pods with the same label
-    pods = core.list_namespaced_pod(namespace=APP_NAMESPACE, label_selector=label_sel)
+
+    # 2) Pods (fallback)
+    pods = core.list_namespaced_pod(namespace=NAMESPACE, label_selector=label_sel)
     if pods.items:
         labels = pods.items[0].metadata.labels or {}
-        uid = labels.get("canfar-net-userid")
+        uid = labels.get(USER_LABEL_KEY)
         if uid:
             cache[session_id] = uid
+            log.info(
+                "map_session_user",
+                source="pod",
+                session=session_id,
+                userid=uid,
+                namespace=NAMESPACE,
+            )
             return uid
     return None
-
-
-@app.get("/livez")
-async def livez():
-    return {"status": "ok"}
-
-
-@app.get("/readyz")
-async def readyz():
-    try:
-        core.get_api_resources()
-        return {"status": "ready"}
-    except Exception as exc:
-        return Response(
-            content=json.dumps({"status": "not_ready", "error": str(exc)}),
-            status_code=503,
-            media_type="application/json",
-        )
 
 
 @app.api_route(
     "/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
 )
-async def auth_any(request: Request, path: str):
-    # extract session id
-    lowered = {k.lower(): v for k, v in request.headers.items()}
-    session_id = extract_session_id(lowered)
-    if not session_id:
-        # deny if we can't identify session
-        header_used = (
-            "referer"
-            if SESSION_RE.search(lowered.get("referer", ""))
-            else (
-                "x-forwarded-uri"
-                if SESSION_RE.search(lowered.get("x-forwarded-uri", ""))
-                else "<none>"
-            )
+async def auth_any(request: Request, path: str) -> Response:
+    """ForwardAuth entrypoint for all routes.
+
+    Traefik ForwardAuth forwards the original request via headers; this
+    endpoint extracts the CARTA session ID and injects an auth header
+    upstream when a valid user mapping is available.
+
+    Health and documentation endpoints bypass the auth flow.
+
+    Args:
+        request: The FastAPI request object containing headers.
+        path: The request path captured by the catch-all route.
+
+    Returns:
+        A JSON response with status and, on success, the injected
+        `carta-auth-token` header.
+    """
+    # Bypass auth for health endpoints: respond directly here
+    if path == "livez":
+        return Response(
+            content=json.dumps({"status": "ok"}),
+            status_code=200,
+            media_type="application/json",
         )
-        logger.debug(
-            "auth",
-            req=request.method,
-            path=request.url.path,
-            header_used=header_used,
-            session_id=None,
-            userid=None,
-            result="missing_session",
+    if path == "readyz":
+        try:
+            core.get_api_resources()
+            return Response(
+                content=json.dumps({"status": "ready"}),
+                status_code=200,
+                media_type="application/json",
+            )
+        except Exception as exc:
+            return Response(
+                content=json.dumps({"status": "not_ready", "error": str(exc)}),
+                status_code=503,
+                media_type="application/json",
+            )
+    # # Let docs/openapi go through default FastAPI handlers
+    # if path.startswith("docs") or path.startswith("openapi"):
+    #     return Response(status_code=404)
+    lower: dict[str, str] = {k.lower(): v for k, v in request.headers.items()}
+    session_id = extract(lower)
+    if not session_id:
+        log.warning(
+            "missing_session",
+            path=path,
+            referer=lower.get("referer"),
+            x_forwarded_uri=lower.get("x-forwarded-uri"),
         )
         return Response(content="missing session id", status_code=403)
 
-    userid = lookup_userid(session_id)
+    userid = lookup(session_id)
     if not userid:
-        header_used = (
-            "referer"
-            if SESSION_RE.search(lowered.get("referer", ""))
-            else "x-forwarded-uri"
-        )
-        logger.debug(
-            "auth",
-            req=request.method,
-            path=request.url.path,
-            header_used=header_used,
-            session_id=session_id,
-            userid=None,
-            result="userid_not_found",
-        )
+        log.warning("userid_not_found", session=session_id)
         return Response(content="userid not found", status_code=403)
 
-    # forwardAuth success: return 200 and include carta-auth-token
-    headers = {"carta-auth-token": userid}
-    body = json.dumps({"ok": True, "session": session_id, "userid": userid})
-    header_used = (
-        "referer"
-        if SESSION_RE.search(lowered.get("referer", ""))
-        else "x-forwarded-uri"
-    )
-    logger.debug(
-        "auth",
-        req=request.method,
-        path=request.url.path,
-        header_used=header_used,
-        session_id=session_id,
-        userid=userid,
-        result="ok",
-    )
+    # success
+    headers: dict[str, str] = {"carta-auth-token": userid}
+    body: dict[str, Any] = {"ok": True, "session": session_id, "userid": userid}
     return Response(
-        content=body, status_code=200, media_type="application/json", headers=headers
+        content=json.dumps(body),
+        status_code=200,
+        media_type="application/json",
+        headers=headers,
     )
