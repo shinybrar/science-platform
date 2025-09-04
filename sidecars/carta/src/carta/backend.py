@@ -27,6 +27,8 @@ SESSION_RE = re.compile(r"/session/carta/([a-z0-9]+)", re.IGNORECASE)
 SESSION_LABEL_KEY = "canfar-net-sessionID"
 USER_LABEL_KEY = "canfar-net-userid"
 
+DEV_MODE = os.environ.get("DEV_MODE", "false").lower() == "true"
+
 logging.basicConfig(level=LOG_LEVEL, format="%(message)s")
 structlog.configure(
     processors=[
@@ -50,7 +52,17 @@ except Exception:
     config.load_kube_config()
     log.info("K8S Mode", mode="kubeconfig")
 
-core = client.CoreV1Api()
+if DEV_MODE:
+    log.info("DEV MODE ENABLED")
+    log.info("Disabling SSL Verification")
+    cfg = client.Configuration.get_default_copy()
+    cfg.verify_ssl = False
+    client.Configuration.set_default(cfg)
+    core = client.CoreV1Api()
+else:
+    log.info("DEV MODE DISABLED")
+    log.info("Enabling SSL Verification")
+    core = client.CoreV1Api()
 
 cache: TTLCache[str, str] = TTLCache(maxsize=4096, ttl=CACHE_TTL_SECONDS)
 
