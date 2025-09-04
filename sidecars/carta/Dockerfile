@@ -5,7 +5,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 # System deps for compiling wheels commonly needed by kubernetes deps
-RUN apk update && apk add --no-cache --no-interactive --purge curl
+RUN apk update && apk add --no-cache --no-interactive --purge \
+    curl \
+    ca-certificates \
+ && update-ca-certificates
 
 # Install uv (standalone installer)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -27,6 +30,11 @@ FROM python:alpine AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
+
+# Ensure system trust store exists for HTTPS
+RUN apk update && apk add --no-cache --no-interactive --purge \
+    ca-certificates \
+ && update-ca-certificates
 
 # Copy venv from builder
 COPY --from=builder /opt/venv /opt/venv
