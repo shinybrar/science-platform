@@ -52,6 +52,7 @@ spec:
       containers:
         - name: sidecar
           image: images.canfar.net/skaha-system/carta-sidecar:dev
+          imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
               valueFrom:
