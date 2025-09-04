@@ -17,7 +17,7 @@ WORKDIR /app
 COPY . /app
 
 # Create venv and install all deps from pyproject with uv sync
-RUN uv venv /opt/venv \
+RUN uv venv /opt/venv --clear \
  && . /opt/venv/bin/activate \
  && uv sync --frozen --active \
  && uv pip install -e .
