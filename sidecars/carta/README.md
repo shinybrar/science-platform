@@ -18,7 +18,7 @@ Install dependencies and run via the CLI entrypoint. The `carta-sidecar` command
 
 ```
 uv sync
-uv run carta-sidecar --host 0.0.0.0 --port 8000  # any uvicorn args work
+uv run carta-sidecar --host 0.0.0.0 --port 8000  # forwards to uvicorn with target carta.backend:app by default
 uv run carta-sidecar --reload --log-level debug  # dev flags
 ```
 

@@ -1,13 +1,11 @@
 # ---- builder: alpine with uv to resolve & install deps from pyproject ----
-FROM python:3.13-slim AS builder
+FROM python:alpine AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 # System deps for compiling wheels commonly needed by kubernetes deps
-RUN apt-get update -y && apt-get install -y --no-install-recommends \
-    curl ca-certificates build-essential libffi-dev libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk update && apk add --no-cache --no-interactive --purge curl
 
 # Install uv (standalone installer)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -21,11 +19,11 @@ COPY . /app
 # Create venv and install all deps from pyproject with uv sync
 RUN uv venv /opt/venv \
  && . /opt/venv/bin/activate \
- && uv sync --frozen \
+ && uv sync --frozen --active \
  && uv pip install -e .
 
 # ---- final runtime image (alpine) ----
-FROM python:3.13-slim
+FROM python:alpine AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
