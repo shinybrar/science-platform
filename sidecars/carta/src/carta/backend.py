@@ -27,7 +27,13 @@ SESSION_RE = re.compile(r"/session/carta/([a-z0-9]+)", re.IGNORECASE)
 SESSION_LABEL_KEY = "canfar-net-sessionID"
 USER_LABEL_KEY = "canfar-net-userid"
 
+# DEV_MODE: When true, disables SSL verification for K8s client
 DEV_MODE = os.environ.get("DEV_MODE", "false").lower() == "true"
+
+# PROD: When true, force the K8s client to use the in-cluster
+# ServiceAccount CA certificate for SSL verification.
+# Path: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+PROD = os.environ.get("PROD", "false").lower() == "true"
 
 logging.basicConfig(level=LOG_LEVEL, format="%(message)s")
 structlog.configure(
@@ -59,6 +65,17 @@ if DEV_MODE:
     cfg.verify_ssl = False
     client.Configuration.set_default(cfg)
     core = client.CoreV1Api()
+elif PROD:
+    log.info("PROD MODE ENABLED")
+    log.info(
+        "Enabling SSL Verification with ServiceAccount CA",
+        ca_path="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+    )
+    cfg = client.Configuration.get_default_copy()
+    cfg.verify_ssl = True
+    cfg.ssl_ca_cert = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    client.Configuration.set_default(cfg)
+    core = client.CoreV1Api()
 else:
     log.info("DEV MODE DISABLED")
     log.info("Enabling SSL Verification")
@@ -72,6 +89,8 @@ log.info(
     namespace=NAMESPACE,
     cache_ttl_seconds=CACHE_TTL_SECONDS,
     log_level=LOG_LEVEL,
+    dev_mode=DEV_MODE,
+    prod=PROD,
     SESSION_LABEL_KEY=SESSION_LABEL_KEY,
     USER_LABEL_KEY=USER_LABEL_KEY,
     session_regex=SESSION_RE.pattern,

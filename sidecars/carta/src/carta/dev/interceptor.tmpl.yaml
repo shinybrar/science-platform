@@ -62,7 +62,6 @@ spec:
       targetPort: 8080
 
 ---
-# Mirror Service: main -> CARTA service, mirror -> echo
 apiVersion: traefik.io/v1alpha1
 kind: TraefikService
 metadata:
@@ -70,18 +69,14 @@ metadata:
   namespace: ${NAMESPACE}
 spec:
   mirroring:
-    # Primary: the live CARTA service still gets 100% of traffic
     name: skaha-carta-svc-${SESSION_ID}
     port: 6901
-    # Mirror: send a copy of requests to the echo service
     mirrors:
       - name: carta-echo
         port: 80
-        percent: 100   # mirror every request
+        percent: 100
 
 ---
-# Narrow, higher-priority route only for /api/database/*
-# Uses the mirroring TraefikService above.
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -95,6 +90,8 @@ spec:
     - kind: Rule
       match: Host(`rc-workload-uv.canfar.net`) && PathPrefix(`/session/carta/${SESSION_ID}/api/database`)
       priority: 10000
+      middlewares:
+        - name: carta-forwardauth     # ensure FA runs before mirroring
       services:
         - kind: TraefikService
           name: carta-mirror
