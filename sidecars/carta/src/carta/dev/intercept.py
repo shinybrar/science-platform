@@ -9,25 +9,18 @@ import sys
 import time
 from pathlib import Path
 from string import Template
-from typing import TYPE_CHECKING
+from typing import Optional
 
 import typer
-
-if TYPE_CHECKING:
-    from typing import Optional
 
 app = typer.Typer(add_completion=False)
 
 MIDDLEWARE_NAME = "carta-forwardauth"
+# Fully qualified kubectl resource for Traefik IngressRoute CRD:
+IR_RES = "ingressroutes.traefik.io"
 
 
-def run(
-    cmd: list[str],
-    *,
-    input_text: str | None = None,
-    capture: bool = False,
-    check: bool = True,
-) -> subprocess.CompletedProcess:
+def run(cmd: list[str], *, input_text: str | None = None, capture: bool = False, check: bool = True) -> subprocess.CompletedProcess:
     if capture:
         return subprocess.run(
             cmd,
@@ -52,17 +45,7 @@ def get_deploy_name(namespace: str, fallback: str = "carta-echo") -> str:
         return fallback
     except subprocess.CalledProcessError:
         proc = run(
-            [
-                "kubectl",
-                "-n",
-                namespace,
-                "get",
-                "deploy",
-                "-l",
-                "app=carta-echo",
-                "-o",
-                "jsonpath={.items[0].metadata.name}",
-            ],
+            ["kubectl", "-n", namespace, "get", "deploy", "-l", "app=carta-echo", "-o", "jsonpath={.items[0].metadata.name}"],
             capture=True,
             check=False,
         )
@@ -70,200 +53,136 @@ def get_deploy_name(namespace: str, fallback: str = "carta-echo") -> str:
         return name or fallback
 
 
-def get_ingressroute_json(namespace: str, name: str) -> Optional[dict]:
-    proc = run(
-        ["kubectl", "-n", namespace, "get", "ingressroute", name, "-o", "json"],
-        capture=True,
-        check=False,
-    )
+def get_ir_json(namespace: str, name: str) -> Optional[dict]:
+    proc = run(["kubectl", "-n", namespace, "get", IR_RES, name, "-o", "json"], capture=True, check=False)
     if proc.returncode != 0 or not proc.stdout:
         return None
     return json.loads(proc.stdout)
 
 
-def ensure_forwardauth_on_base_route(
-    namespace: str, session_id: str
-) -> tuple[bool, Optional[str]]:
-    """Ensure the base session IngressRoute (skaha-carta-ingress-<id>) has carta-forwardauth as the FIRST middleware.
-    Returns (changed, previous_middlewares_json_string or None)
+def find_base_ir_by_session(namespace: str, session_id: str) -> Optional[str]:
+    """If skaha-carta-ingress-<session> doesn't exist, scan for any IngressRoute
+    whose first route's match contains the session PathPrefix.
     """
-    name = f"skaha-carta-ingress-{session_id}"
-    obj = get_ingressroute_json(namespace, name)
-    if not obj:
-        # Some generators might use different names; try a describe-based fallback?
-        # For dev simplicity, just return no-op.
-        return (False, None)
+    expected = f"skaha-carta-ingress-{session_id}"
+    if get_ir_json(namespace, expected):
+        return expected
 
+    proc = run(["kubectl", "-n", namespace, "get", IR_RES, "-o", "json"], capture=True, check=False)
+    if proc.returncode != 0 or not proc.stdout:
+        return None
+    data = json.loads(proc.stdout)
+    needle = f"/session/carta/{session_id}"
+    for item in data.get("items", []):
+        routes = item.get("spec", {}).get("routes", [])
+        if not routes:
+            continue
+        match = routes[0].get("match", "") or ""
+        if needle in match:
+            return item["metadata"]["name"]
+    return None
+
+
+def ensure_forwardauth_on_base_route(namespace: str, session_id: str) -> tuple[bool, Optional[str], Optional[str]]:
+    """
+    Ensure the base session IngressRoute has carta-forwardauth as the FIRST middleware.
+    Returns (changed, previous_middlewares_json, base_ir_name)
+    """
+    name = find_base_ir_by_session(namespace, session_id)
+    if not name:
+        return (False, None, None)
+
+    obj = get_ir_json(namespace, name)
     routes = obj.get("spec", {}).get("routes", [])
     if not routes:
-        return (False, None)
+        return (False, None, name)
 
-    # We only touch the first route of this IngressRoute (it’s your session path)
     current = routes[0].get("middlewares", [])
-    prev = json.dumps(current) if current else None
+    prev_json = json.dumps(current) if current else None
 
-    # Is FA already present as the first item?
-    already = any(mw.get("name") == MIDDLEWARE_NAME for mw in current)
-    if already and current and current[0].get("name") == MIDDLEWARE_NAME:
-        return (False, prev)
+    # already first?
+    if current and current[0].get("name") == MIDDLEWARE_NAME:
+        return (False, prev_json, name)
 
-    # Build new array with FA first (de-duplicate)
+    # build new list with FA first, dedup others
     new_list = [{"name": MIDDLEWARE_NAME}]
-    for mw in current:
+    for mw in current or []:
         if mw.get("name") != MIDDLEWARE_NAME:
             new_list.append(mw)
 
-    # If there was no middlewares list, we need an add; else replace
+    patch = []
     if current:
-        patch = [
-            {
-                "op": "replace",
-                "path": "/spec/routes/0/middlewares",
-                "value": new_list,
-            }
-        ]
+        patch.append({"op": "replace", "path": "/spec/routes/0/middlewares", "value": new_list})
     else:
-        patch = [
-            {
-                "op": "add",
-                "path": "/spec/routes/0/middlewares",
-                "value": new_list,
-            }
-        ]
+        patch.append({"op": "add", "path": "/spec/routes/0/middlewares", "value": new_list})
 
-    run(
-        [
-            "kubectl",
-            "-n",
-            namespace,
-            "patch",
-            "ingressroute",
-            name,
-            "--type=json",
-            "-p",
-            json.dumps(patch),
-        ],
-        check=True,
-    )
-    return (True, prev)
+    run(["kubectl", "-n", namespace, "patch", IR_RES, name, "--type=json", "-p", json.dumps(patch)], check=True)
+    return (True, prev_json, name)
 
 
-def restore_base_route_middlewares(
-    namespace: str, session_id: str, prev_json: Optional[str]
-) -> None:
-    name = f"skaha-carta-ingress-{session_id}"
-    # If it never existed, nothing to do
+def restore_base_route_middlewares(namespace: str, base_ir_name: Optional[str], prev_json: Optional[str]) -> None:
+    if not base_ir_name:
+        return
+    # If there was no previous middlewares field, remove; else restore value.
     if prev_json is None:
-        # remove the field entirely if we added it
-        # (best-effort; ignore failures)
         with contextlib.suppress(Exception):
-            run(
-                [
-                    "kubectl",
-                    "-n",
-                    namespace,
-                    "patch",
-                    "ingressroute",
-                    name,
-                    "--type=json",
-                    "-p",
-                    json.dumps(
-                        [{"op": "remove", "path": "/spec/routes/0/middlewares"}]
-                    ),
-                ],
-                check=False,
-            )
+            run(["kubectl", "-n", namespace, "patch", IR_RES, base_ir_name, "--type=json",
+                 "-p", json.dumps([{"op": "remove", "path": "/spec/routes/0/middlewares"}])], check=False)
         return
 
-    # Otherwise restore
     try:
         value = json.loads(prev_json)
     except Exception:
         value = []
 
-    op = "replace" if value else "remove"
-    patch = [{"op": op, "path": "/spec/routes/0/middlewares"}]
     if value:
-        patch[0]["value"] = value
-    run(
-        [
-            "kubectl",
-            "-n",
-            namespace,
-            "patch",
-            "ingressroute",
-            name,
-            "--type=json",
-            "-p",
-            json.dumps(patch),
-        ],
-        check=False,
-    )
+        patch = [{"op": "replace", "path": "/spec/routes/0/middlewares", "value": value}]
+    else:
+        patch = [{"op": "remove", "path": "/spec/routes/0/middlewares"}]
+
+    run(["kubectl", "-n", namespace, "patch", IR_RES, base_ir_name, "--type=json", "-p", json.dumps(patch)], check=False)
 
 
 @app.command()
 def intercept(
-    template_path: Path = typer.Option(
-        ..., "--template", "-t", help="Path to interceptor.tmpl.yaml"
-    ),
+    template_path: Path = typer.Option(..., "--template", "-t", help="Path to interceptor.tmpl.yaml"),
     namespace: str = typer.Option(..., "--namespace", "-n"),
     session_id: str = typer.Option(..., "--session-id", "-s"),
-    wait_seconds: float = typer.Option(
-        5.0, "--wait", "-w", help="Seconds to wait before tailing logs"
-    ),
-    echo_deploy: str = typer.Option(
-        "carta-echo", "--echo-deploy", help="Echo Deployment name"
-    ),
+    wait_seconds: float = typer.Option(5.0, "--wait", "-w", help="Seconds to wait before tailing logs"),
+    echo_deploy: str = typer.Option("carta-echo", "--echo-deploy", help="Echo Deployment name"),
 ):
-    """Apply mirror resources, patch base IngressRoute to require ForwardAuth, tail echo logs,
-    and rollback everything on Ctrl-C.
-    """
+    """Apply mirror resources, patch base IngressRoute to require ForwardAuth, tail echo logs, then clean up."""
     # 1) render template
     raw = template_path.read_text(encoding="utf-8")
     rendered = Template(raw).substitute(NAMESPACE=namespace, SESSION_ID=session_id)
 
     # 2) apply template
     print(f"→ Applying mirror to ns={namespace}, session={session_id} ...", flush=True)
-    run(["kubectl", "apply", "-f", "-"], input_text=rendered, check=True)
+    run(["kubectl", "-n", namespace, "apply", "-f", "-"], input_text=rendered, check=True)
 
-    # 3) patch base IngressRoute to prepend carta-forwardauth (idempotent)
-    print(
-        f"→ Ensuring ForwardAuth on base IngressRoute skaha-carta-ingress-{session_id} ...",
-        flush=True,
-    )
-    changed, prev_middlewares = ensure_forwardauth_on_base_route(namespace, session_id)
-    if changed:
-        print("   applied: carta-forwardauth is now first middleware", flush=True)
-    else:
-        print("   no change needed (already present or route not found)", flush=True)
+    # 3) ensure ForwardAuth on base IngressRoute
+    print(f"→ Ensuring ForwardAuth on base {IR_RES}/skaha-carta-ingress-{session_id} (or equivalent) ...", flush=True)
+    changed, prev_mw_json, base_ir_name = ensure_forwardauth_on_base_route(namespace, session_id)
+    if base_ir_name:
+        print(f"   base route: {base_ir_name}", flush=True)
+    print(("   applied: carta-forwardauth is now first middleware"
+           if changed else "   no change needed (already present or base route not found)"), flush=True)
 
-    # 4) wait, then tail echo logs
+    # 4) wait and tail echo logs
     time.sleep(wait_seconds)
     dep_name = get_deploy_name(namespace, fallback=echo_deploy)
-    print(
-        f"→ Tailing logs: deploy/{dep_name} in {namespace} (Ctrl-C to stop)", flush=True
-    )
+    print(f"→ Tailing logs: deploy/{dep_name} in {namespace} (Ctrl-C to stop)", flush=True)
     log_proc = subprocess.Popen(
-        [
-            "kubectl",
-            "-n",
-            namespace,
-            "logs",
-            f"deploy/{dep_name}",
-            "-f",
-            "--timestamps",
-        ],
+        ["kubectl", "-n", namespace, "logs", f"deploy/{dep_name}", "-f", "--timestamps"],
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
 
     # 5) wait for signal
     stop = False
-
     def handle_sig(sig, frame):
         nonlocal stop
         stop = True
-
     for s in (signal.SIGINT, signal.SIGTERM):
         signal.signal(s, handle_sig)
 
@@ -277,18 +196,19 @@ def intercept(
         with contextlib.suppress(Exception):
             log_proc.terminate()
 
-        # 6) teardown: remove mirror resources
+        # 6) delete mirror resources
         print("\n→ Deleting mirror resources ...", flush=True)
         with contextlib.suppress(Exception):
-            run(["kubectl", "delete", "-f", "-"], input_text=rendered, check=False)
+            run(["kubectl", "-n", namespace, "delete", "-f", "-"], input_text=rendered, check=False)
 
         # 7) restore base IngressRoute middlewares
         print("→ Restoring base IngressRoute middlewares ...", flush=True)
         with contextlib.suppress(Exception):
-            restore_base_route_middlewares(namespace, session_id, prev_middlewares)
+            restore_base_route_middlewares(namespace, base_ir_name, prev_mw_json)
 
         print("✓ Done.", flush=True)
 
 
 if __name__ == "__main__":
     app()
+
