@@ -15,11 +15,7 @@ from kubernetes import client, config
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-NAMESPACE = (
-    os.environ.get("TARGET_NAMESPACE")
-    or os.environ.get("POD_NAMESPACE")
-    or "skaha-workload"
-)
+NAMESPACE = os.environ.get("TARGET_NAMESPACE", "skaha-workload")
 CACHE_TTL_SECONDS = int(os.environ.get("CACHE_TTL_SECONDS", "3600"))  # 1 hour default
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 

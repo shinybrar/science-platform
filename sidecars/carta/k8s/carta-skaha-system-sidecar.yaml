@@ -49,19 +49,16 @@ spec:
           image: images.canfar.net/skaha-system/carta-sidecar:dev
           imagePullPolicy: Always
           env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            # Optional overrides:
-            # - name: TARGET_NAMESPACE
-            #   value: "skaha-workload"
+            - name: TARGET_NAMESPACE
+              value: "skaha-workload"
             - name: CACHE_TTL_SECONDS
               value: "3600"
             - name: LOG_LEVEL
-              value: "INFO"
+              value: "DEBUG"
             - name: DEV_MODE
               value: "true"
+            - name: PROD
+              value: "false"
           ports:
             - containerPort: 8000
           livenessProbe:
