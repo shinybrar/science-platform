@@ -84,18 +84,16 @@ else:
 cache: TTLCache[str, str] = TTLCache(maxsize=4096, ttl=CACHE_TTL_SECONDS)
 
 app: FastAPI = FastAPI(title="CARTA ForwardAuth Injector", version="1.0.0")
-log.info(
-    "Backend Config",
-    namespace=NAMESPACE,
-    cache_ttl_seconds=CACHE_TTL_SECONDS,
-    log_level=LOG_LEVEL,
-    dev_mode=DEV_MODE,
-    prod=PROD,
-    SESSION_LABEL_KEY=SESSION_LABEL_KEY,
-    USER_LABEL_KEY=USER_LABEL_KEY,
-    session_regex=SESSION_RE.pattern,
-    APP_PID=os.getpid(),
-)
+log.info("Starting CARTA ForwardAuth Sidecar")
+log.info("Backend Parameter", namespace=NAMESPACE)
+log.info("Backend Parameter", LOG_LEVEL=LOG_LEVEL)
+log.info("Backend Parameter", DEV_MODE=DEV_MODE)
+log.info("Backend Parameter", PROD=PROD)
+log.info("Backend Parameter", SESSION_LABEL_KEY=SESSION_LABEL_KEY)
+log.info("Backend Parameter", USER_LABEL_KEY=USER_LABEL_KEY)
+log.info("Backend Parameter", REGEX_PATTERN=SESSION_RE.pattern)
+log.info("Backend Parameter", CACHE_TTL_SECONDS=CACHE_TTL_SECONDS)
+log.info("Backend Parameter", APP_PID=os.getpid())
 
 
 def extract(headers: Mapping[str, str]) -> str | None:
@@ -114,11 +112,15 @@ def extract(headers: Mapping[str, str]) -> str | None:
     referer = headers.get("referer") or ""
     match = SESSION_RE.search(referer)
     if match:
+        log.debug("extract_session_id", source="referer", session=match.group(1))
         return match.group(1)
 
     xfu = headers.get("x-forwarded-uri") or ""
     match = SESSION_RE.search(xfu)
     if match:
+        log.debug(
+            "extract_session_id", source="x-forwarded-uri", session=match.group(1)
+        )
         return match.group(1)
 
     return None
@@ -138,27 +140,11 @@ def lookup(session_id: str) -> str | None:
         The resolved user ID if found; otherwise ``None``.
     """
     if session_id in cache:
-        log.debug("cache_hit", session=session_id)
+        log.debug("cache_hit", source="cache", session=session_id)
         return cache[session_id]
 
-    # 1) Services
+    # 1) Search pods for the session label
     label_sel = f"{SESSION_LABEL_KEY}={session_id}"
-    svcs = core.list_namespaced_service(namespace=NAMESPACE, label_selector=label_sel)
-    if svcs.items:
-        labels = svcs.items[0].metadata.labels or {}
-        uid = labels.get(USER_LABEL_KEY)
-        if uid:
-            cache[session_id] = uid
-            log.info(
-                "map_session_user",
-                source="service",
-                session=session_id,
-                userid=uid,
-                namespace=NAMESPACE,
-            )
-            return uid
-
-    # 2) Pods (fallback)
     pods = core.list_namespaced_pod(namespace=NAMESPACE, label_selector=label_sel)
     if pods.items:
         labels = pods.items[0].metadata.labels or {}
@@ -172,7 +158,9 @@ def lookup(session_id: str) -> str | None:
                 userid=uid,
                 namespace=NAMESPACE,
             )
+            log.debug("userid_found", source="pod", session=session_id, userid=uid)
             return uid
+        log.warning("no_userid", session=session_id, namespace=NAMESPACE)
     return None
 
 
@@ -217,9 +205,6 @@ async def auth_any(request: Request, path: str) -> Response:
                 status_code=503,
                 media_type="application/json",
             )
-    # # Let docs/openapi go through default FastAPI handlers
-    # if path.startswith("docs") or path.startswith("openapi"):
-    #     return Response(status_code=404)
     lower: dict[str, str] = {k.lower(): v for k, v in request.headers.items()}
     session_id = extract(lower)
     if not session_id:
