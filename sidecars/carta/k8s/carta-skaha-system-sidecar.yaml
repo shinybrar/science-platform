@@ -63,12 +63,12 @@ spec:
             - containerPort: 8000
           livenessProbe:
             httpGet: { path: /livez, port: 8000 }
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            periodSeconds: 60
           readinessProbe:
             httpGet: { path: /readyz, port: 8000 }
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            periodSeconds: 60
           resources:
             requests: { cpu: "100m", memory: "128Mi" }
             limits: { cpu: "500m", memory: "512Mi" }
