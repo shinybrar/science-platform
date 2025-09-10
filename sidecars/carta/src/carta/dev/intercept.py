@@ -1,4 +1,5 @@
-# intercept.py
+"""Development tool for intercepting CARTA sessions with ForwardAuth."""
+
 from __future__ import annotations
 
 import contextlib
@@ -7,10 +8,17 @@ import signal
 import subprocess
 import sys
 import time
-from pathlib import Path
+from pathlib import Path  # noqa: TC003
 from string import Template
+from typing import Any
 
+import structlog
 import typer
+
+from carta import TEMPLATE_PATH
+
+log = structlog.get_logger()
+
 
 app = typer.Typer(add_completion=False)
 
@@ -25,25 +33,46 @@ def run(
     input_text: str | None = None,
     capture: bool = False,
     check: bool = True,
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess[str]:
+    """Run a subprocess command with optional input and capture.
+
+    Args:
+        cmd: Command and arguments to run.
+        input_text: Optional input text to send to stdin.
+        capture: Whether to capture stdout/stderr.
+        check: Whether to check return code.
+
+    Returns:
+        CompletedProcess instance.
+    """
     if capture:
-        return subprocess.run(
+        return subprocess.run(  # noqa: S603
             cmd,
             input=input_text.encode("utf-8") if input_text is not None else None,
             capture_output=True,
             text=True,
             check=check,
         )
-    return subprocess.run(
+    return subprocess.run(  # noqa: S603
         cmd,
         input=input_text.encode("utf-8") if input_text is not None else None,
         stdout=sys.stdout,
         stderr=sys.stderr,
+        text=True,
         check=check,
     )
 
 
 def get_deploy_name(namespace: str, fallback: str = "carta-echo") -> str:
+    """Get deployment name, falling back to label selector if needed.
+
+    Args:
+        namespace: Kubernetes namespace.
+        fallback: Default deployment name to try first.
+
+    Returns:
+        Deployment name.
+    """
     try:
         run(["kubectl", "-n", namespace, "get", "deploy", fallback], check=True)
         return fallback
@@ -67,7 +96,16 @@ def get_deploy_name(namespace: str, fallback: str = "carta-echo") -> str:
         return name or fallback
 
 
-def get_ir_json(namespace: str, name: str) -> dict | None:
+def get_ir_json(namespace: str, name: str) -> dict[str, Any] | None:
+    """Get IngressRoute JSON object.
+
+    Args:
+        namespace: Kubernetes namespace.
+        name: IngressRoute name.
+
+    Returns:
+        IngressRoute JSON object or None if not found.
+    """
     proc = run(
         ["kubectl", "-n", namespace, "get", IR_RES, name, "-o", "json"],
         capture=True,
@@ -79,8 +117,14 @@ def get_ir_json(namespace: str, name: str) -> dict | None:
 
 
 def find_base_ir_by_session(namespace: str, session_id: str) -> str | None:
-    """If skaha-carta-ingress-<session> doesn't exist, scan for any IngressRoute
-    whose first route's match contains the session PathPrefix.
+    """Find the base IngressRoute by session ID.
+
+    Args:
+        namespace (str): Kubernetes namespace.
+        session_id (str): CARTA session ID.
+
+    Returns:
+        str | None: IngressRoute name or None if not found.
     """
     expected = f"skaha-carta-ingress-{session_id}"
     if get_ir_json(namespace, expected):
@@ -109,7 +153,13 @@ def ensure_forwardauth_on_base_route(
     namespace: str, session_id: str
 ) -> tuple[bool, str | None, str | None]:
     """Ensure the base session IngressRoute has carta-forwardauth as the FIRST middleware.
-    Returns (changed, previous_middlewares_json, base_ir_name)
+
+    Args:
+        namespace (str): Kubernetes namespace.
+        session_id (str): CARTA session ID.
+
+    Returns:
+        tuple[bool, str | None, str | None]: Tuple of middlwares
     """
     name = find_base_ir_by_session(namespace, session_id)
     if not name:
@@ -163,6 +213,16 @@ def ensure_forwardauth_on_base_route(
 def restore_base_route_middlewares(
     namespace: str, base_ir_name: str | None, prev_json: str | None
 ) -> None:
+    """Restore the base IngressRoute middlewares to their previous state.
+
+    Args:
+        namespace (str): Kubernetes namespace.
+        base_ir_name (str | None): Base IngressRoute name.
+        prev_json (str | None): Previous middlewares JSON.
+
+    Returns:
+        None
+    """
     if not base_ir_name:
         return
     # If there was no previous middlewares field, remove; else restore value.
@@ -217,24 +277,24 @@ def restore_base_route_middlewares(
 @app.command()
 def intercept(
     template_path: Path = typer.Option(
-        ..., "--template", "-t", help="Path to interceptor.tmpl.yaml"
+        TEMPLATE_PATH, "--template", "-t", help="Path to interceptor.tmpl.yaml"
     ),
     namespace: str = typer.Option(..., "--namespace", "-n"),
     session_id: str = typer.Option(..., "--session-id", "-s"),
-    wait_seconds: float = typer.Option(
+    wait: float = typer.Option(
         5.0, "--wait", "-w", help="Seconds to wait before tailing logs"
     ),
     echo_deploy: str = typer.Option(
         "carta-echo", "--echo-deploy", help="Echo Deployment name"
     ),
-):
-    """Apply mirror resources, patch base IngressRoute to require ForwardAuth, tail echo logs, then clean up."""
+) -> None:
+    """Intercept a CARTA session with ForwardAuth."""
     # 1) render template
     raw = template_path.read_text(encoding="utf-8")
     rendered = Template(raw).substitute(NAMESPACE=namespace, SESSION_ID=session_id)
 
     # 2) apply template
-    print(f"→ Applying mirror to ns={namespace}, session={session_id} ...", flush=True)
+    log.info("applying_template", namespace=namespace, session_id=session_id)
     run(
         ["kubectl", "-n", namespace, "apply", "-f", "-"],
         input_text=rendered,
@@ -242,30 +302,28 @@ def intercept(
     )
 
     # 3) ensure ForwardAuth on base IngressRoute
-    print(
-        f"→ Ensuring ForwardAuth on base {IR_RES}/skaha-carta-ingress-{session_id} (or equivalent) ...",
-        flush=True,
+    log.info(
+        "ensuring_forwardauth",
+        namespace=namespace,
+        session_id=session_id,
+        middleware_name=MIDDLEWARE_NAME,
+        ir_resource=IR_RES,
     )
     changed, prev_mw_json, base_ir_name = ensure_forwardauth_on_base_route(
         namespace, session_id
     )
     if base_ir_name:
-        print(f"   base route: {base_ir_name}", flush=True)
-    print(
-        (
-            "   applied: carta-forwardauth is now first middleware"
-            if changed
-            else "   no change needed (already present or base route not found)"
-        ),
-        flush=True,
-    )
+        log.info("base_ir_name", base_ir_name=base_ir_name)
+        if changed:
+            log.info("forwardauth_added", base_ir_name=base_ir_name)
+        else:
+            log.info("forwardauth_present", base_ir_name=base_ir_name)
 
     # 4) wait and tail echo logs
-    time.sleep(wait_seconds)
+    time.sleep(wait)
     dep_name = get_deploy_name(namespace, fallback=echo_deploy)
-    print(
-        f"→ Tailing logs: deploy/{dep_name} in {namespace} (Ctrl-C to stop)", flush=True
-    )
+
+    log.info("tailing_logs", deploy_name=dep_name, namespace=namespace)
     log_proc = subprocess.Popen(
         [
             "kubectl",
@@ -301,7 +359,7 @@ def intercept(
             log_proc.terminate()
 
         # 6) delete mirror resources
-        print("\n→ Deleting mirror resources ...", flush=True)
+        log.info("deleting_mirror_resources", namespace=namespace)
         with contextlib.suppress(Exception):
             run(
                 ["kubectl", "-n", namespace, "delete", "-f", "-"],
@@ -310,11 +368,11 @@ def intercept(
             )
 
         # 7) restore base IngressRoute middlewares
-        print("→ Restoring base IngressRoute middlewares ...", flush=True)
+        log.info("restoring_base_route_middlewares", base_ir_name=base_ir_name)
         with contextlib.suppress(Exception):
             restore_base_route_middlewares(namespace, base_ir_name, prev_mw_json)
 
-        print("✓ Done.", flush=True)
+        log.info("done")
 
 
 if __name__ == "__main__":

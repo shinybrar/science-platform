@@ -2,9 +2,10 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: carta-forwardauth
-  namespace: skaha-workload
 spec:
   forwardAuth:
+    # NOTE: Update this address to match your system namespace
+    # Format: http://carta-sidecar.<SYSTEM_NAMESPACE>.svc/
     address: http://carta-sidecar.skaha-system.svc/
     trustForwardHeader: true
     authRequestHeaders:

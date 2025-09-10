@@ -1,8 +1,8 @@
-from pathlib import Path
+"""CARTA authentication sidecar package."""
 
-# from .backend import app
+from pathlib import Path
 
 BASE_PATH: Path = Path(__file__).parent
 TEMPLATE_PATH: Path = BASE_PATH / "dev" / "interceptor.tmpl.yaml"
 
-__all__ = ["app"]
+__all__ = ["BASE_PATH", "TEMPLATE_PATH"]

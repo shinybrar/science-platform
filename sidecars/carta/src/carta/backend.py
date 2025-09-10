@@ -51,7 +51,7 @@ log = structlog.get_logger("carta-sidecar")
 try:
     config.load_incluster_config()
     log.info("K8S Mode", mode="incluster")
-except Exception:
+except config.ConfigException:
     config.load_kube_config()
     log.info("K8S Mode", mode="kubeconfig")
 
@@ -196,7 +196,7 @@ async def auth_any(request: Request, path: str) -> Response:
                 status_code=200,
                 media_type="application/json",
             )
-        except Exception as exc:
+        except (client.ApiException, OSError) as exc:
             return Response(
                 content=json.dumps({"status": "not_ready", "error": str(exc)}),
                 status_code=503,

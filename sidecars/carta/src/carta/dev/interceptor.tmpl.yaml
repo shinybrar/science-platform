@@ -96,4 +96,4 @@ spec:
         - kind: TraefikService
           name: carta-mirror
   tls:
-    secretName: rc-workload-uv-canfar-net-tls
+    secretName: rc-workload-uv-canfar-net-tls  # pragma: allowlist secret
