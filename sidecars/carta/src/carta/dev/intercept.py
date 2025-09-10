@@ -48,14 +48,14 @@ def run(
     if capture:
         return subprocess.run(  # noqa: S603
             cmd,
-            input=input_text.encode("utf-8") if input_text is not None else None,
+            input=input_text,
             capture_output=True,
             text=True,
             check=check,
         )
     return subprocess.run(  # noqa: S603
         cmd,
-        input=input_text.encode("utf-8") if input_text is not None else None,
+        input=input_text,
         stdout=sys.stdout,
         stderr=sys.stderr,
         text=True,
@@ -75,7 +75,6 @@ def get_deploy_name(namespace: str, fallback: str = "carta-echo") -> str:
     """
     try:
         run(["kubectl", "-n", namespace, "get", "deploy", fallback], check=True)
-        return fallback
     except subprocess.CalledProcessError:
         proc = run(
             [
@@ -94,6 +93,8 @@ def get_deploy_name(namespace: str, fallback: str = "carta-echo") -> str:
         )
         name = (proc.stdout or "").strip()
         return name or fallback
+    else:
+        return fallback
 
 
 def get_ir_json(namespace: str, name: str) -> dict[str, Any] | None:
@@ -159,13 +160,16 @@ def ensure_forwardauth_on_base_route(
         session_id (str): CARTA session ID.
 
     Returns:
-        tuple[bool, str | None, str | None]: Tuple of middlwares
+        tuple[bool, str | None, str | None]: Tuple of middlewares
     """
     name = find_base_ir_by_session(namespace, session_id)
     if not name:
         return (False, None, None)
 
     obj = get_ir_json(namespace, name)
+    if not obj:
+        return (False, None, name)
+
     routes = obj.get("spec", {}).get("routes", [])
     if not routes:
         return (False, None, name)
@@ -179,9 +183,7 @@ def ensure_forwardauth_on_base_route(
 
     # build new list with FA first, dedup others
     new_list = [{"name": MIDDLEWARE_NAME}]
-    for mw in current or []:
-        if mw.get("name") != MIDDLEWARE_NAME:
-            new_list.append(mw)
+    new_list.extend(mw for mw in (current or []) if mw.get("name") != MIDDLEWARE_NAME)
 
     patch = []
     if current:
@@ -248,7 +250,7 @@ def restore_base_route_middlewares(
 
     try:
         value = json.loads(prev_json)
-    except Exception:
+    except (json.JSONDecodeError, TypeError):
         value = []
 
     if value:
@@ -290,8 +292,17 @@ def intercept(
 ) -> None:
     """Intercept a CARTA session with ForwardAuth."""
     # 1) render template
-    raw = template_path.read_text(encoding="utf-8")
-    rendered = Template(raw).substitute(NAMESPACE=namespace, SESSION_ID=session_id)
+    try:
+        raw = template_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        log.exception("failed_to_read_template", template_path=template_path)
+        raise typer.Exit(1) from e
+
+    try:
+        rendered = Template(raw).substitute(NAMESPACE=namespace, SESSION_ID=session_id)
+    except (KeyError, ValueError) as e:
+        log.exception("failed_to_render_template")
+        raise typer.Exit(1) from e
 
     # 2) apply template
     log.info("applying_template", namespace=namespace, session_id=session_id)
@@ -341,7 +352,7 @@ def intercept(
     # 5) wait for signal
     stop = False
 
-    def handle_sig(sig, frame):
+    def handle_sig(_sig: int, _frame: Any) -> None:
         nonlocal stop
         stop = True
 
