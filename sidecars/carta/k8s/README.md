@@ -6,8 +6,8 @@ This directory contains Kubernetes manifests for deploying the CARTA authenticat
 
 The deployment consists of three main components:
 
-1. **CARTA Controller** (`carta-controller.yaml`) - The main CARTA controller with ephermal MongoDB backend
-2. **CARTA Sidecar** (`carta-skaha-system-sidecar.yaml`) - ForwardAuth service for session authentication  
+1. **CARTA Controller** (`carta-controller.yaml`) - The main CARTA controller with an ephermal MongoDB backend
+2. **CARTA Sidecar** (`carta-sidecar.yaml`) - ForwardAuth service for session authentication
 3. **Traefik Middleware** (`traefik-middleware.yaml`) - Traefik middleware configuration for ForwardAuth
 
 ## Prerequisites
@@ -115,7 +115,7 @@ kubectl get services -n <SYSTEM_NAMESPACE>
 # CARTA Controller logs
 kubectl logs -n <SYSTEM_NAMESPACE> deployment/carta-controller
 
-# CARTA Sidecar logs  
+# CARTA Sidecar logs
 kubectl logs -n <SYSTEM_NAMESPACE> deployment/carta-sidecar
 
 # MongoDB logs

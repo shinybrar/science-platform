@@ -202,6 +202,7 @@ async def auth_any(request: Request, path: str) -> Response:
                 status_code=503,
                 media_type="application/json",
             )
+    log.info("path_accessed", path=path)
     lower: dict[str, str] = {k.lower(): v for k, v in request.headers.items()}
     session_id = extract(lower)
     if not session_id:
