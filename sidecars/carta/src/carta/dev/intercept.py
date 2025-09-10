@@ -9,7 +9,6 @@ import sys
 import time
 from pathlib import Path
 from string import Template
-from typing import Optional
 
 import typer
 
@@ -31,8 +30,7 @@ def run(
         return subprocess.run(
             cmd,
             input=input_text.encode("utf-8") if input_text is not None else None,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=check,
         )
@@ -69,7 +67,7 @@ def get_deploy_name(namespace: str, fallback: str = "carta-echo") -> str:
         return name or fallback
 
 
-def get_ir_json(namespace: str, name: str) -> Optional[dict]:
+def get_ir_json(namespace: str, name: str) -> dict | None:
     proc = run(
         ["kubectl", "-n", namespace, "get", IR_RES, name, "-o", "json"],
         capture=True,
@@ -80,7 +78,7 @@ def get_ir_json(namespace: str, name: str) -> Optional[dict]:
     return json.loads(proc.stdout)
 
 
-def find_base_ir_by_session(namespace: str, session_id: str) -> Optional[str]:
+def find_base_ir_by_session(namespace: str, session_id: str) -> str | None:
     """If skaha-carta-ingress-<session> doesn't exist, scan for any IngressRoute
     whose first route's match contains the session PathPrefix.
     """
@@ -109,7 +107,7 @@ def find_base_ir_by_session(namespace: str, session_id: str) -> Optional[str]:
 
 def ensure_forwardauth_on_base_route(
     namespace: str, session_id: str
-) -> tuple[bool, Optional[str], Optional[str]]:
+) -> tuple[bool, str | None, str | None]:
     """Ensure the base session IngressRoute has carta-forwardauth as the FIRST middleware.
     Returns (changed, previous_middlewares_json, base_ir_name)
     """
@@ -163,7 +161,7 @@ def ensure_forwardauth_on_base_route(
 
 
 def restore_base_route_middlewares(
-    namespace: str, base_ir_name: Optional[str], prev_json: Optional[str]
+    namespace: str, base_ir_name: str | None, prev_json: str | None
 ) -> None:
     if not base_ir_name:
         return

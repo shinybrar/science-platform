@@ -1,4 +1,5 @@
-# app.py
+"""CARTA ForwardAuth Backend."""
+
 from __future__ import annotations
 
 import json

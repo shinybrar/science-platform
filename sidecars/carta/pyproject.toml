@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "ForwardAuth service for CARTA sessions resolving user IDs via Kubernetes labels"
 requires-python = ">=3.10"
 readme = "README.md"
-authors = [{ name = "Science Platform" }]
+authors = [{ name = "Shiny Brar", email = "shiny.brar@nrc-cnrc.gc.ca" }]
 dependencies = [
   "fastapi>=0.112",
   "uvicorn[standard]>=0.30",
@@ -218,7 +218,7 @@ filterwarnings = [
 
 # Coverage configuration
 [tool.coverage.run]
-source = ["canfar"]
+source = ["carta"]
 omit = [
     "tests/*",
     "setup.py",
@@ -264,7 +264,7 @@ skips = ["B101", "B601"]  # Skip assert_used and shell_injection_process_functio
 # Additional tool configurations for completeness
 [tool.vulture]
 min_confidence = 80
-paths = ["canfar", "tests"]
+paths = ["src", "tests"]
 exclude = ["venv/", ".venv/"]
 
 [tool.interrogate]

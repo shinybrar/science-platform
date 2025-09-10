@@ -1,23 +1,14 @@
-files: ^[^/]+$
+files: ./carta/*
 repos:
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.17.1
     hooks:
       - id: mypy
         additional_dependencies:
-          - types-toml
-          - types-requests
-          - types-defusedxml
-          - types-PyYAML
-          - httpx
-          - pydantic
-          - pydantic_settings
-          - rich
-          - segno
+          - fastapi
+          - kubernetes
+          - structlog
           - typer
-          - cadcutils
-          - questionary
-          - humanize
         args: [--config-file=pyproject.toml]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
