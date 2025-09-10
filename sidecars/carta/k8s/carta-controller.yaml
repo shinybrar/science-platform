@@ -19,13 +19,14 @@ data:
       "serverInterface": "0.0.0.0",
       "httpOnly": true,
       "dashboardAddress": "/dashboard",
-      "processCommand": "echo by-pass processCommand",
-      "killCommand": "echo by-pass killCommand",
+      "processCommand": "",
+      "killCommand": "",
       "rootFolderTemplate": "/home/{username}",
       "baseFolderTemplate": "/home/{username}",
       "logFile": "/var/log/carta/controller.log",
       "logTypeConsole": "text",
       "logTypeFile": "text",
+      "logConsoleLevel": "debug",
       "timezone": "America/Vancouver",
     }
 ---
