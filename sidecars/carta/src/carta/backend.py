@@ -110,11 +110,13 @@ def extract(headers: Mapping[str, str]) -> str | None:
     match = SESSION_RE.search(referer)
     if match:
         log.debug("extract_session_id", source="referer", session=match.group(1))
+        log.debug("referer_header", referer=referer)
         return match.group(1)
 
     xfu = headers.get("x-forwarded-uri") or ""
     match = SESSION_RE.search(xfu)
     if match:
+        log.debug("x_forwarded_uri_header", x_forwarded_uri=xfu)
         log.debug(
             "extract_session_id", source="x-forwarded-uri", session=match.group(1)
         )
@@ -202,7 +204,6 @@ async def auth_any(request: Request, path: str) -> Response:
                 status_code=503,
                 media_type="application/json",
             )
-    log.info("path_accessed", path=path)
     lower: dict[str, str] = {k.lower(): v for k, v in request.headers.items()}
     session_id = extract(lower)
     if not session_id:
