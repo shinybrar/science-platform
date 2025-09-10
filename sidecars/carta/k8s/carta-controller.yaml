@@ -26,8 +26,9 @@ data:
       "logFile": "/var/log/carta/controller.log",
       "logTypeConsole": "text",
       "logTypeFile": "text",
-      "logConsoleLevel": "debug",
-      "timezone": "America/Vancouver",
+      "logLevelFile": "debug",
+      "logLevelConsole": "debug",
+      "timezone": "America/Vancouver"
     }
 ---
 # --- MongoDB (ephemeral; NO auth; for dev only)
