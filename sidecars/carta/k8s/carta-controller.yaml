@@ -1,0 +1,195 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: carta-controller-config
+  namespace: skaha-system
+data:
+  config.json: |
+    {
+      "$schema": "https://cartavis.org/schemas/controller_config_schema_2.json",
+      "controllerConfigVersion": "2.0",
+      "authProviders": {
+        "forwardAuth": { "headerKey": "carta-auth-token" }
+      },
+      "database": {
+        "uri": "mongodb://mongodb-carta.skaha-system.svc:27017",
+        "databaseName": "CARTA"
+      },
+      "additionalArgs": [
+        "--no_frontend",
+        "--no_database",
+        "--controller_deployment",
+        "--verbosity=4",
+        "--exit_timeout=30",
+        "--log_performance=true"
+      ],
+      "serverPort": 8000,
+      "serverInterface": "0.0.0.0",
+      "httpOnly": true,
+      "dashboardAddress": "/dashboard",
+      "processCommand": "echo by-pass processCommand",
+      "killCommand": "echo by-pass killCommand",
+      "rootFolderTemplate": "/home/{username}",
+      "baseFolderTemplate": "/home/{username}",
+      "logFile": "/var/log/carta/controller.log",
+      "logTypeConsole": "text",
+      "logTypeFile": "text",
+      "timezone": "America/Vancouver",
+      "dashboard": {
+        "bannerColor": "#d2dce5",
+        "backgroundColor": "#f6f8fa",
+        "infoText": "Welcome to CARTA 5 on CANFAR",
+        "loginText": "<span>Please enter your login credentials:</span>",
+        "footerText": "<span>CARTA 5 on CANFAR</span>"
+      }
+    }
+---
+# --- MongoDB (ephemeral; NO auth; for dev only)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-carta
+  namespace: skaha-system
+  labels: { app: mongodb-carta }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: mongodb-carta }
+  template:
+    metadata:
+      labels: { app: mongodb-carta }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        # omit runAsUser to let the image pick a suitable UID; add later if desired
+        seccompProfile: { type: RuntimeDefault }
+      volumes:
+        - name: data
+          emptyDir: {}     # ephemeral
+      containers:
+        - name: mongodb
+          image: mongodb/mongodb-community-server:latest
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits:   { cpu: "1",    memory: "1Gi" }
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities: { drop: ["ALL"] }
+          livenessProbe:
+            tcpSocket: { port: 27017 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket: { port: 27017 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-carta
+  namespace: skaha-system
+  labels: { app: mongodb-carta }
+spec:
+  selector: { app: mongodb-carta }
+  ports:
+    - name: mongo
+      port: 27017
+      targetPort: 27017
+---
+# --- CARTA Controller
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carta-controller
+  namespace: skaha-system
+  labels: { app: carta-controller }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: carta-controller }
+  template:
+    metadata:
+      labels: { app: carta-controller }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 99999
+        seccompProfile: { type: RuntimeDefault }
+      volumes:
+        - name: config
+          configMap:
+            name: carta-controller-config
+            items:
+              - key: config.json
+                path: config.json
+      containers:
+        - name: controller
+          image: images.canfar.net/skaha-system/carta-controller:dev
+          args: ["carta-controller", "--config", "/etc/carta/config.json"]
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: config
+              mountPath: /etc/carta
+              readOnly: true
+          env:
+            - name: TZ
+              value: "America/Vancouver"
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits:   { cpu: "1",    memory: "1Gi" }
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities: { drop: ["ALL"] }
+          # Controller’s auth/status needs a header; use a simple TCP probe for liveness/readiness.
+          livenessProbe:
+            tcpSocket: { port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket: { port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: carta-controller
+  namespace: skaha-system
+  labels: { app: carta-controller }
+spec:
+  selector: { app: carta-controller }
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+---
+# --- (optional) allow controller→mongodb traffic if you run default-deny policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-carta-controller-to-mongo
+  namespace: skaha-system
+spec:
+  podSelector:
+    matchLabels:
+      app: mongodb-carta
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: carta-controller
+      ports:
+        - protocol: TCP
+          port: 27017
+
