@@ -62,7 +62,10 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-        # omit runAsUser to let the image pick a suitable UID; add later if desired
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile: { type: RuntimeDefault }
       volumes:
         - name: data
@@ -70,6 +73,7 @@ spec:
       containers:
         - name: mongodb
           image: mongodb/mongodb-community-server:latest
+          args: ["--bind_ip_all"]
           ports:
             - containerPort: 27017
           volumeMounts:
