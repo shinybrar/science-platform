@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.0.2](https://github.com/opencadc/science-platform/compare/1.0.1...1.0.2) (2025-09-10)
+
+
+### Bug Fixes
+
+* fix imports ([fcea0e7](https://github.com/opencadc/science-platform/commit/fcea0e7f9d1e654c9bdcd7d8f906f1030ac1d981))
+* fix to report requested gpus ([1f7ec51](https://github.com/opencadc/science-platform/commit/1f7ec51182c32e970c324b8d453f8ea22e6a7ae8))
+
+## [1.0.1](https://github.com/opencadc/science-platform/compare/1.0.0...1.0.1) (2025-09-10)
+
+
+### Bug Fixes
+
+* fix for gpu count in desktop apps ([aab5375](https://github.com/opencadc/science-platform/commit/aab5375c5ca0be2b36c0050b6f17ce1d05a49c41))
+* only check for active jobs ([0349828](https://github.com/opencadc/science-platform/commit/03498280a7ac699affc6b877b0239d1d585fdca7))
+* only check for active jobs ([6970111](https://github.com/opencadc/science-platform/commit/697011199de201f7a495079348286e4fcdd29888))
+
 ## [1.0.0](https://github.com/opencadc/science-platform/compare/0.30.1...1.0.0) (2025-09-08)
 
 

@@ -6,12 +6,22 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
-import io.kubernetes.client.openapi.models.*;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1JobStatus;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.Config;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,13 +183,16 @@ public class SessionDAO {
 
         final PodResourceUsage podResourceUsage = PodResourceUsage.get(forUserID, omitHeadless);
         final List<V1Job> userJobs = jobListRequest.execute().getItems();
-        LOGGER.debug("Found " + userJobs.size() + " jobs for user " + forUserID + " with selector " + labelSelector);
-        return userJobs.stream()
+        LOGGER.debug("Found " + userJobs.size() + " jobs for user " + forUserID + " with selector " + labelSelector
+                + " before filtering.");
+        final List<Session> sessions = userJobs.stream()
                 .filter(job -> job.getStatus() != null
-                        && 1 == Objects.requireNonNullElse(job.getStatus().getActive(), 0)
-                        && 0 == Objects.requireNonNullElse(job.getStatus().getFailed(), 0))
+                        && 0 < Objects.requireNonNullElse(job.getStatus().getActive(), 0))
                 .map(job -> SessionBuilder.fromJob(job, podResourceUsage))
                 .collect(Collectors.toList());
+        LOGGER.debug("Found " + sessions.size() + " sessions for user " + forUserID + " with selector " + labelSelector
+                + " after filtering.");
+        return sessions;
     }
 
     static String getConnectURL(
@@ -362,31 +375,31 @@ public class SessionDAO {
                     final V1Container podContainer = podContainers.get(0);
                     this.image = podContainer.getImage();
 
-                    final V1ResourceRequirements resourceRequirements = podContainer.getResources();
+                    final V1ResourceRequirements resourceRequirements =
+                            Objects.requireNonNullElse(podContainer.getResources(), new V1ResourceRequirements());
 
-                    if (resourceRequirements != null) {
-                        final Map<String, Quantity> resourceRequests = resourceRequirements.getRequests();
-                        if (resourceRequests != null) {
-                            if (this.isFixedResources) {
-                                if (resourceRequests.containsKey("memory")) {
-                                    this.requestedMemory = PodResourceUsage.toCommonMemoryUnit(
-                                            resourceRequests.get("memory").toSuffixedString());
-                                }
-
-                                if (resourceRequests.containsKey("cpu")) {
-                                    this.requestedCPUCores = PodResourceUsage.toCoreUnit(
-                                            resourceRequests.get("cpu").toSuffixedString());
-                                }
-                            }
-
-                            if (resourceRequests.containsKey("nvidia\\.com/gpu")) {
-                                this.requestedGPUCores =
-                                        resourceRequests.get("nvidia\\.com/gpu").toSuffixedString();
-                            } else {
-                                // Set to zero to satisfy UI conditions.
-                                this.requestedGPUCores = "0";
-                            }
+                    final Map<String, Quantity> resourceRequests =
+                            Objects.requireNonNullElse(resourceRequirements.getRequests(), Collections.emptyMap());
+                    if (this.isFixedResources) {
+                        if (resourceRequests.containsKey("memory")) {
+                            this.requestedMemory = PodResourceUsage.toCommonMemoryUnit(
+                                    resourceRequests.get("memory").toSuffixedString());
                         }
+
+                        if (resourceRequests.containsKey("cpu")) {
+                            this.requestedCPUCores = PodResourceUsage.toCoreUnit(
+                                    resourceRequests.get("cpu").toSuffixedString());
+                        }
+                    }
+
+                    final Map<String, Quantity> resourceLimits =
+                            Objects.requireNonNullElse(resourceRequirements.getLimits(), Collections.emptyMap());
+                    if (resourceLimits.containsKey("nvidia.com/gpu")) {
+                        this.requestedGPUCores =
+                                resourceLimits.get("nvidia.com/gpu").toSuffixedString();
+                    } else {
+                        // Set to zero to satisfy UI conditions.
+                        this.requestedGPUCores = "0";
                     }
                 }
 
